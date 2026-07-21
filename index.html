@@ -1,0 +1,2879 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PTA Open Hour</title>
+    <!-- Favicon 貓頭鷹 -->
+    <link rel="icon" href="logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            /* 充滿活力的 Duolingo 風格調色盤 */
+            --duo-green: #58CC02;
+            --duo-green-dark: #58A700;
+            --duo-blue: #1CB0F6;
+            --duo-blue-dark: #1899D6;
+            --duo-red: #FF4B4B;
+            --duo-orange: #FF9600;
+            --text-main: #334155;
+            --text-muted: #94a3b8;
+            /* 活力漸層背景 */
+            --bg-body: #f4f7fa;
+        }
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            /* 增加隱約的彩色光暈，提升學校活力感 */
+            background-image:
+                radial-gradient(circle at top left, rgba(28, 176, 246, 0.08), transparent 40%),
+                radial-gradient(circle at bottom right, rgba(255, 150, 0, 0.08), transparent 40%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            /* 使用 clamp 讓 padding 在不同裝置上自動縮放 */
+            padding: clamp(16px, 3vw, 40px) clamp(12px, 2vw, 24px) 80px;
+            color: var(--text-main);
+        }
+
+        /* 擴大版面，讓視覺更寬敞 (滿版感) */
+        .page-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+
+        /* Loading Overlay */
+        #loading-overlay { position:fixed;inset:0;background:#f8fafc;z-index:999;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px; }
+        #loading-overlay.hidden { display:none; }
+        @keyframes doodleBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-15px) scale(1.05); }
+        }
+        .doodle-bounce { animation: doodleBounce 1.5s infinite ease-in-out; display: inline-block; }
+
+
+        /* Header 橫幅設計 - 增加活力與層次 */
+        .card-header {
+            background: white;
+            border-radius: 32px;
+            padding: clamp(32px, 6vw, 48px) 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.03);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid #f1f5f9;
+        }
+        .card-header::before {
+            content:'';
+            position:absolute;
+            top:0; left:0; right:0; height:8px;
+            background: linear-gradient(90deg, var(--duo-blue), var(--duo-green), var(--duo-orange));
+        }
+        .board-title {
+            font-size: clamp(32px, 6vw, 56px);
+            font-weight: 900;
+            color: #1e293b;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+        .board-subtitle {
+            font-size: clamp(16px, 3vw, 20px);
+            font-weight: 700;
+            color: var(--text-muted);
+            background: #f1f5f9;
+            display: inline-block;
+            padding: 6px 20px;
+            border-radius: 999px;
+        }
+
+
+        /* ═══════════════════════════════════
+            BULLETIN BOARD
+        ═══════════════════════════════════ */
+        #bulletin-board {
+            background: white;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+            border: 3px solid #f1f5f9;
+        }
+
+
+        .bulletin-header {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .bulletin-dots { display:flex; gap:8px; align-items:center; }
+        .bulletin-dot { width:12px; height:12px; border-radius:50%; box-shadow:inset 0 2px 4px rgba(0,0,0,0.2); }
+        .bulletin-title { font-size:14px; font-weight:900; color:white; text-transform:uppercase; letter-spacing:2px; margin-left:12px; }
+        .bulletin-toggle-btn {
+            background: rgba(255,255,255,0.15); color: white; border: none; border-radius: 12px;
+            padding: 8px 16px; font-size: 13px; font-weight: 800; cursor: pointer; transition: all .2s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .bulletin-toggle-btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
+
+
+        .bulletin-body { display:grid; grid-template-columns: 1fr 1fr; gap:0; }
+        @media(max-width: 768px) { .bulletin-body { grid-template-columns: 1fr; } }
+
+
+        /* Booking Window */
+        .booking-window-panel { padding: clamp(20px, 4vw, 32px); border-right: 2px solid #f1f5f9; background: #fafcff; }
+        @media(max-width: 768px) { .booking-window-panel { border-right:none; border-bottom: 2px solid #f1f5f9; } }
+
+        .panel-label { font-size:12px; font-weight:900; color:#94a3b8; text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+
+
+        .time-row { display:flex; align-items:center; gap:16px; margin-bottom:16px; }
+        .time-icon { width:44px; height:44px; border-radius:14px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; }
+        .time-icon.open-icon  { background:#dcfce7; }
+        .time-icon.close-icon { background:#fee2e2; }
+        .time-label { font-size:12px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; }
+        .time-value { font-size:clamp(15px, 2.5vw, 18px); font-weight:900; color:#1e293b; margin-top:2px; }
+
+
+        .status-badge-inline { display:inline-flex; align-items:center; gap:8px; font-size:14px; font-weight:800; padding:6px 16px; border-radius:999px; margin-top:16px; }
+        .badge-open   { background:#dcfce7; color:#16a34a; }
+        .badge-closed { background:#fee2e2; color:#dc2626; }
+        .badge-soon   { background:#fef3c7; color:#d97706; }
+
+
+        /* Countdown */
+        .countdown-box { display:flex; align-items:center; gap:12px; margin-top:20px; background:#f8fafc; border:2px solid #e2e8f0; border-radius:16px; padding:12px 20px; flex-wrap:wrap; }
+        .countdown-box.hidden { display:none; }
+        .countdown-label { font-size:12px; font-weight:900; color:#64748b; text-transform:uppercase; letter-spacing:1px; }
+        .countdown-digits { display:flex; align-items:center; gap:6px; }
+        .cd-block { background:#1e293b; color:#f8fafc; border-radius:10px; padding:6px 10px; font-size:20px; font-weight:900; font-family:monospace; min-width:44px; text-align:center; box-shadow: 0 4px 0 #0f172a; }
+        .cd-sep { color:#94a3b8; font-weight:900; font-size:20px; }
+
+
+        /* Announcements */
+        .announcement-panel { padding: clamp(20px, 4vw, 32px); }
+        .announcement-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100px; color:#cbd5e1; font-size:15px; font-weight:800; text-align:center; gap:10px; }
+        .announcement-item { background:#fffbeb; border:2px solid #fde68a; border-radius:16px; padding:16px; margin-bottom:12px; display:flex; gap:12px; align-items:flex-start; }
+        .announcement-item:last-child { margin-bottom:0; }
+        .ann-icon { font-size:20px; flex-shrink:0; margin-top:2px; }
+        .ann-text { font-size:15px; font-weight:700; color:#92400e; line-height:1.6; }
+
+
+        /* Controls */
+        .controls-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px; }
+        .status-pill { font-weight:900; font-size:15px; padding:10px 24px; border-radius:30px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 12px rgba(0,0,0,0.05); text-transform: uppercase; letter-spacing: 1px; }
+        .status-open    { background:var(--duo-green); color:white; border-bottom: 3px solid var(--duo-green-dark); }
+        .status-closed  { background:var(--duo-red); color:white; border-bottom: 3px solid #cc3c3c; }
+        .status-soon    { background:var(--duo-orange); color:white; border-bottom: 3px solid #cc7800; }
+        .status-checking{ background:#e2e8f0; color:#64748b; }
+
+        .manage-btn {
+            background: var(--duo-blue); color: white; border: none;
+            padding: 12px 28px; border-radius: 30px; font-weight: 900; font-size: 16px;
+            border-bottom: 4px solid var(--duo-blue-dark);
+            cursor: pointer; transition: all .15s cubic-bezier(0.34,1.56,0.64,1);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .manage-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+        .manage-btn:active { transform: translateY(2px); border-bottom-width: 0px; margin-bottom: 4px; }
+
+
+        /* Main Board - 寬敞舒適 */
+        .board {
+            background: white; border-radius: 32px;
+            padding: clamp(24px, 5vw, 48px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.04); min-height: 600px;
+            border: 3px solid #f1f5f9;
+        }
+        .board-toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; flex-wrap:wrap; gap:20px; border-bottom:2px solid #f1f5f9; padding-bottom:24px; }
+
+        /* 步驟導覽列 */
+        .progress-steps { display:flex; align-items:center; gap:12px; font-weight:800; font-size: clamp(14px, 2vw, 18px); flex-wrap: wrap; }
+        .step { color:var(--text-muted); transition: color 0.3s; }
+        .step.active { color:var(--duo-green-dark); }
+
+        .search-box { position:relative; width:100%; max-width: 360px; }
+        .search-input {
+            width:100%; padding:14px 20px;
+            border:2px solid #e2e8f0; border-radius:20px;
+            font-family:'Inter',sans-serif; font-weight:800; font-size:16px;
+            color:var(--text-main); transition:all .2s; background:#f8fafc;
+        }
+        .search-input:focus { outline:none; border-color:var(--duo-blue); background:white; box-shadow:0 0 0 4px rgba(28,176,246,.15); }
+
+
+        /* Subjects Grid & Teacher Select Grid */
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 24px;
+        }
+        /* ✅ 手機版：科目卡固定 2 欄，老師卡也 2 欄 */
+        @media(max-width: 600px) {
+            .subjects-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .subject-card {
+                padding: 20px 12px;
+                border-radius: 18px;
+                gap: 10px;
+            }
+            .subject-icon { font-size: 36px; }
+            .subject-name { font-size: 15px; }
+            .subject-count { font-size: 11px; padding: 4px 10px; }
+            .teacher-select-card {
+                padding: 16px 10px;
+                border-radius: 18px;
+                gap: 8px;
+            }
+            .ts-avatar-wrapper { width: 60px; height: 60px; }
+            .ts-name { font-size: 15px; }
+            .ts-meta { font-size: 11px; padding: 4px 8px; }
+        }
+        .subject-card {
+            background: white; border-radius: 24px; padding: 32px 20px; text-align: center;
+            cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+            border: 3px solid #f1f5f9; transition: all .2s cubic-bezier(0.34,1.56,0.64,1);
+            display: flex; flex-direction: column; align-items: center; gap: 16px;
+        }
+        .subject-card:hover { transform: translateY(-8px); box-shadow: 0 16px 32px rgba(0,0,0,0.08); border-color: var(--duo-green); }
+        .subject-icon { font-size: 56px; }
+        .subject-name { font-size: 22px; font-weight: 900; color: #1e293b; line-height: 1.2; }
+        .subject-count { background: #f1f5f9; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 800; color: #64748b; }
+
+
+        /* 專屬第二層選老師的卡片 */
+        .teacher-select-card {
+            background: white; border-radius: 24px; padding: 24px 20px; text-align: center;
+            cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+            border: 3px solid #f1f5f9; transition: all .2s cubic-bezier(0.34,1.56,0.64,1);
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+        }
+        .teacher-select-card:hover { transform: translateY(-8px); box-shadow: 0 16px 32px rgba(0,0,0,0.08); border-color: var(--duo-blue); }
+
+        /* 老師頭像顯示 (無 hover info 效果) */
+        .ts-avatar-wrapper { position: relative; width: 80px; height: 80px; margin-bottom: 4px; }
+        .ts-avatar { width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+        .teacher-select-card:hover .ts-avatar { transform: scale(1.05); }
+
+
+        .ts-name { font-size: 20px; font-weight: 900; color: #1e293b; line-height: 1.2; }
+        .ts-meta { background: #f1f5f9; padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; color: #64748b; }
+
+
+        /* Teachers Detail Card (Step 3) - 全新簡歷式排版 */
+        .teacher-card {
+            background: white; border-radius: 28px;
+            padding: clamp(20px, 4vw, 40px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.03); border: 3px solid #f1f5f9;
+            display: flex; flex-direction: column; gap: 32px;
+        }
+
+        .teacher-resume-header {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        @media(max-width: 600px) {
+            .teacher-resume-header { flex-direction: column; text-align: center; }
+        }
+
+
+        .teacher-avatar-large { width: 100px; height: 100px; border-radius: 50%; flex-shrink: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
+        .teacher-name-large { font-size: clamp(24px, 4vw, 32px); font-weight: 900; color: #1e293b; line-height: 1.2; margin-bottom: 12px; }
+
+        .teacher-meta-tags { display: flex; gap: 12px; flex-wrap: wrap; }
+        @media(max-width: 600px) { .teacher-meta-tags { justify-content: center; } }
+        .teacher-meta-tag {
+            background: #f1f5f9; color: #475569;
+            padding: 8px 16px; border-radius: 12px;
+            font-size: 14px; font-weight: 800;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+
+
+        .teacher-resume-note {
+            background: #f8fafc; border-radius: 20px; padding: 24px; border: 2px solid #f1f5f9; text-align: left;
+        }
+        .note-title { font-size: 13px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .note-content { font-size: 15px; color: #475569; font-weight: 700; line-height: 1.6; }
+
+
+        /* Slots */
+        .slots-area { width: 100%; border-top: 2px solid #f1f5f9; padding-top: 32px; }
+        .slots-area-title { font-size: 18px; font-weight: 900; color: #1e293b; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
+
+        .date-label { font-size: 15px; font-weight: 900; color: var(--duo-blue); margin: 0 0 16px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;}
+        .slots-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px; }
+        .slots-row:last-child { margin-bottom: 0; }
+
+        .slot-btn {
+            font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 900;
+            padding: 12px 20px; border-radius: 16px; border: 2px solid #e2e8f0;
+            background: white; color: #475569; cursor: pointer;
+            transition: all .15s cubic-bezier(0.34,1.56,0.64,1);
+            box-shadow: 0 4px 0 #e2e8f0;
+        }
+        .slot-available { border-color: var(--duo-green); color: var(--duo-green-dark); box-shadow: 0 4px 0 var(--duo-green); }
+        .slot-available:hover {
+            background: var(--duo-green); color: white;
+            transform: translateY(-2px); box-shadow: 0 6px 0 var(--duo-green-dark);
+        }
+        .slot-available:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+        .slot-booked { background: #f8fafc; border-color: #e2e8f0; color: #cbd5e1; box-shadow: none; text-decoration: line-through; cursor: not-allowed; opacity: 0.8; }
+        .slot-locked { background: #fef9c3; border-color: #fde047; color: #a16207; box-shadow: none; cursor: not-allowed; }
+        .slot-locked i { animation: spin 1s linear infinite; margin-left: 6px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+
+        .back-btn {
+            background: white; color: #64748b; border: 2px solid #e2e8f0;
+            padding: 10px 20px; font-size: 15px; border-radius: 16px; font-weight: 900;
+            display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all .2s;
+        }
+        .back-btn:hover { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; transform: translateX(-4px); }
+
+
+        .empty-state { text-align: center; padding: clamp(40px, 8vw, 80px) 20px; }
+        .empty-icon { font-size: 80px; margin-bottom: 24px; color: #cbd5e1; }
+        .empty-state h2 { font-size: clamp(24px, 5vw, 32px); font-weight: 900; color: #1e293b; margin-bottom: 12px; }
+        .empty-state p { font-size: clamp(16px, 3vw, 20px); font-weight: 700; color: #64748b; }
+
+
+        /* SweetAlert SaaS 活力風格 */
+        .swal-saas .swal2-popup { border-radius:32px!important; box-shadow:0 24px 60px rgba(0,0,0,.15)!important; padding:40px 32px!important; border: 3px solid #E5E7EB !important;}
+        .swal-saas .swal2-title { font-family:'Inter',sans-serif!important; font-weight:700!important; color:#111!important; font-size: 28px!important;}
+        .swal-saas .swal2-confirm { background:var(--duo-blue)!important; border-bottom: 4px solid var(--duo-blue-dark) !important; border-radius:20px!important; font-weight:900!important; font-size:16px!important; padding:14px 36px!important; transition: all 0.1s !important; }
+        .swal-saas .swal2-confirm:active { transform: translateY(4px)!important; border-bottom-width: 0px!important; margin-bottom: 4px!important;}
+
+        .swal-saas .swal2-cancel { background:#f1f5f9!important; color:#64748b!important; border-bottom: 4px solid #e2e8f0 !important; border-radius:20px!important; font-weight:900!important; font-size:16px!important; padding:14px 36px!important; transition: all 0.1s !important; }
+        .swal-saas .swal2-cancel:active { transform: translateY(4px)!important; border-bottom-width: 0px!important; margin-bottom: 4px!important;}
+
+        .saas-input { width:100%; padding:16px 20px; border:2px solid #e2e8f0; border-radius:16px; font-family:'Inter',sans-serif; font-weight:800; font-size:16px; outline:none; transition:.2s; margin-bottom:16px; background:#f8fafc; }
+        .saas-input:focus { border-color:var(--duo-blue); background:white; box-shadow:0 0 0 4px rgba(28,176,246,.15); }
+        .swal-wide .swal2-popup { max-width:600px!important; } /* 加寬 Modal 讓輸入更舒適 */
+
+
+        .fade-in { animation:fadeIn .4s ease-out both; }
+        @keyframes fadeIn { from{opacity:0; transform:translateY(15px)} to{opacity:1; transform:translateY(0)} }
+
+
+        /* ═══ Landing Page ═══ */
+        #landing-page {
+            position: fixed; inset: 0; z-index: 1000;
+            background: var(--bg-body);
+            background-image:
+                radial-gradient(circle at top left, rgba(28, 176, 246, 0.12), transparent 40%),
+                radial-gradient(circle at bottom right, rgba(255, 150, 0, 0.12), transparent 40%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 24px; text-align: center;
+        }
+        #landing-page.hidden { display: none; }
+        .landing-card {
+            background: white; border-radius: 32px; padding: clamp(40px, 8vw, 64px) clamp(24px, 5vw, 48px);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.08); border: 3px solid #f1f5f9;
+            max-width: 520px; width: 100%; position: relative; overflow: hidden;
+        }
+        .landing-card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:8px;
+            background: linear-gradient(90deg, var(--duo-blue), var(--duo-green), var(--duo-orange));
+        }
+        .landing-mascot { width: 180px; height: 180px; margin-bottom: 24px; object-fit: contain; display: block; margin-left: auto; margin-right: auto; }
+        .landing-title { font-size: clamp(28px, 6vw, 42px); font-weight: 900; color: #1e293b; margin-bottom: 12px; letter-spacing: -1px; }
+        .landing-desc { font-size: clamp(15px, 3vw, 18px); font-weight: 700; color: #64748b; line-height: 1.6; margin-bottom: 32px; }
+        .landing-enter-btn {
+            background: var(--duo-green); color: white; border: none;
+            padding: 18px 48px; border-radius: 30px; font-weight: 900; font-size: 20px;
+            border-bottom: 5px solid var(--duo-green-dark);
+            cursor: pointer; transition: all .15s cubic-bezier(0.34,1.56,0.64,1);
+            display: inline-flex; align-items: center; gap: 12px;
+            font-family: 'Inter', sans-serif; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .landing-enter-btn:hover { transform: translateY(-3px); filter: brightness(1.05); box-shadow: 0 8px 24px rgba(88,204,2,0.3); }
+        .landing-enter-btn:active { transform: translateY(3px); border-bottom-width: 0px; margin-bottom: 5px; }
+        .landing-footer { margin-top: 24px; font-size: 13px; font-weight: 700; color: #94a3b8; }
+
+        /* ═══ LOGIN GATE ═══ */
+        #login-gate {
+            position: fixed; inset: 0; z-index: 998;
+            background: var(--bg-body);
+            background-image:
+                radial-gradient(circle at top left, rgba(28, 176, 246, 0.12), transparent 40%),
+                radial-gradient(circle at bottom right, rgba(255, 150, 0, 0.12), transparent 40%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 24px; text-align: center;
+        }
+        #login-gate.hidden { display: none; }
+        .gate-card {
+            background: white; border-radius: 32px; padding: clamp(36px, 6vw, 56px) clamp(24px, 5vw, 48px);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.08); border: 3px solid #f1f5f9;
+            max-width: 480px; width: 100%; position: relative; overflow: hidden;
+        }
+        .gate-card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:8px;
+            background: linear-gradient(90deg, var(--duo-blue), var(--duo-green), var(--duo-orange));
+        }
+        .gate-icon { font-size: 64px; margin-bottom: 20px; }
+        .gate-title { font-size: clamp(24px, 5vw, 32px); font-weight: 900; color: #1e293b; margin-bottom: 12px; }
+        .gate-desc { font-size: clamp(14px, 2.5vw, 16px); font-weight: 700; color: #64748b; line-height: 1.6; margin-bottom: 28px; }
+        .gate-input {
+            width: 100%; padding: 16px 20px;
+            border: 2px solid #e2e8f0; border-radius: 16px;
+            font-family: 'Inter', sans-serif; font-weight: 800; font-size: 18px;
+            background: #f8fafc; outline: none; transition: .2s;
+            text-align: center; margin-bottom: 16px;
+        }
+        .gate-input:focus { border-color: var(--duo-blue); background: white; box-shadow: 0 0 0 4px rgba(28,176,246,.15); }
+        .gate-input.code-input { font-family: monospace; font-size: 32px; letter-spacing: 12px; padding: 18px; }
+        .gate-btn {
+            width: 100%;
+            background: var(--duo-blue); color: white; border: none;
+            padding: 16px 32px; border-radius: 24px; font-weight: 900; font-size: 18px;
+            border-bottom: 4px solid var(--duo-blue-dark);
+            cursor: pointer; transition: all .15s cubic-bezier(0.34,1.56,0.64,1);
+            font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 1px;
+            margin-top: 8px;
+        }
+        .gate-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+        .gate-btn:active { transform: translateY(2px); border-bottom-width: 0px; margin-bottom: 4px; }
+        .gate-btn:disabled { background: #cbd5e1 !important; border-bottom-color: #94a3b8 !important; cursor: not-allowed; transform: none !important; }
+        .gate-link { background: none; border: none; color: var(--duo-blue); font-weight: 800; font-size: 14px; cursor: pointer; text-decoration: underline; margin-top: 16px; font-family: 'Inter', sans-serif; }
+        .gate-error { color: #ef4444; font-weight: 800; font-size: 14px; margin-top: 12px; min-height: 20px; }
+        .gate-step { display: none; }
+        .gate-step.active { display: block; }
+        .gate-email-display { background: #f1f5f9; padding: 10px 16px; border-radius: 12px; font-weight: 900; color: #1e293b; margin-bottom: 16px; word-break: break-all; }
+
+        /* ═══ FLOATING DOCK ═══ */
+        #floating-dock {
+            position: fixed; top: 50%; right: 16px; transform: translateY(-50%); z-index: 100;
+            background: white; border-radius: 36px; padding: 10px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.12); border: 3px solid #f1f5f9;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        #floating-dock.hidden { display: none; }
+        @media(max-width: 600px) {
+            #floating-dock { top: auto; bottom: 16px; right: 50%; transform: translateX(50%); flex-direction: row; }
+        }
+        .dock-btn {
+            width: 52px; height: 52px; border-radius: 50%; border: 2px solid transparent;
+            background: #f8fafc; cursor: pointer; position: relative;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; transition: all 0.2s; color: #475569;
+        }
+        .dock-btn:hover { background: #e2e8f0; transform: scale(1.08); border-color: var(--duo-blue); }
+        .dock-btn.dock-profile { background: linear-gradient(135deg, var(--duo-blue), var(--duo-green)); color: white; font-weight: 900; font-size: 18px; }
+        .dock-btn.dock-profile:hover { transform: scale(1.05); }
+        .dock-btn.dock-logout:hover { background: #fee2e2; border-color: #ef4444; color: #ef4444; }
+        .dock-badge {
+            position: absolute; top: -2px; right: -2px;
+            background: #ef4444; color: white; font-size: 10px; font-weight: 900;
+            min-width: 20px; height: 20px; border-radius: 999px; padding: 0 6px;
+            display: none; align-items: center; justify-content: center;
+            box-shadow: 0 2px 6px rgba(239,68,68,0.4); border: 2px solid white;
+        }
+        .dock-badge.show { display: flex; }
+        .dock-tooltip {
+            position: absolute; right: 100%; top: 50%; transform: translateY(-50%);
+            margin-right: 14px; background: #1e293b; color: white;
+            padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 800;
+            white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+        }
+        .dock-tooltip::after {
+            content: ''; position: absolute; left: 100%; top: 50%; transform: translateY(-50%);
+            border: 6px solid transparent; border-left-color: #1e293b;
+        }
+        .dock-btn:hover .dock-tooltip { opacity: 1; }
+        @media(max-width: 600px) {
+            .dock-tooltip {
+                right: auto; bottom: 100%; top: auto; left: 50%; transform: translateX(-50%);
+                margin-right: 0; margin-bottom: 12px;
+            }
+            .dock-tooltip::after {
+                left: 50%; top: 100%; transform: translateX(-50%);
+                border: 6px solid transparent; border-top-color: #1e293b; border-left-color: transparent;
+            }
+        }
+
+        /* ═══ MODALS ═══ */
+        .pta-modal-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px; animation: fadeIn 0.2s ease-out;
+        }
+        .pta-modal-overlay.hidden { display: none; }
+        .pta-modal {
+            background: white; border-radius: 32px;
+            max-width: 720px; width: 100%; max-height: 90vh;
+            display: flex; flex-direction: column; overflow: hidden;
+            border: 3px solid #f1f5f9; box-shadow: 0 32px 80px rgba(0,0,0,0.25);
+            animation: modalSlide 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes modalSlide { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .pta-modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 24px 28px; border-bottom: 2px solid #f1f5f9; flex-shrink: 0;
+        }
+        .pta-modal-title { font-size: 24px; font-weight: 900; color: #1e293b; display: flex; align-items: center; gap: 12px; }
+        .pta-modal-close {
+            width: 40px; height: 40px; border-radius: 50%; border: none;
+            background: #f1f5f9; color: #475569; cursor: pointer; font-size: 18px;
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .pta-modal-close:hover { background: #ef4444; color: white; transform: rotate(90deg); }
+        .pta-modal-body { padding: 28px; overflow-y: auto; flex: 1; }
+        .pta-modal-footer { padding: 20px 28px; border-top: 2px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0; }
+
+        .pta-tabs { display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 16px; margin-bottom: 20px; }
+        .pta-tab {
+            flex: 1; padding: 10px 16px; border-radius: 12px; border: none; background: transparent;
+            cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 14px;
+            color: #64748b; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .pta-tab.active { background: white; color: #1e293b; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .pta-tab .tab-count { background: #e2e8f0; padding: 2px 8px; border-radius: 999px; font-size: 11px; }
+        .pta-tab.active .tab-count { background: var(--duo-blue); color: white; }
+
+        .child-row {
+            background: white; border: 2px solid #e2e8f0; border-radius: 20px;
+            padding: 16px 20px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 16px; transition: all 0.2s;
+        }
+        .child-row:hover { border-color: var(--duo-blue); transform: translateX(-4px); }
+        .child-avatar {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: linear-gradient(135deg, #fef3c7, #fed7aa);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+        }
+        .child-info { flex: 1; min-width: 0; }
+        .child-name { font-size: 16px; font-weight: 900; color: #1e293b; }
+        .child-meta { font-size: 13px; color: #64748b; font-weight: 700; margin-top: 2px; }
+        .child-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .child-btn {
+            border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer;
+            font-family: 'Inter', sans-serif; font-weight: 900; font-size: 12px; transition: all 0.15s;
+        }
+        .child-btn.edit { background: #dbeafe; color: #1e40af; }
+        .child-btn.edit:hover { background: var(--duo-blue); color: white; }
+        .child-btn.del { background: #fee2e2; color: #b91c1c; }
+        .child-btn.del:hover { background: #ef4444; color: white; }
+
+        .add-child-form {
+            background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 20px;
+            padding: 20px; margin-top: 16px;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 100px 100px; gap: 12px; margin-bottom: 12px; }
+        .form-row.form-row-2col { grid-template-columns: 1fr 140px; }
+        @media(max-width: 600px) { .form-row, .form-row.form-row-2col { grid-template-columns: 1fr 1fr; } }
+        .form-label { display: block; font-size: 12px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
+
+        .booking-row {
+            background: white; border: 2px solid #e2e8f0; border-radius: 20px;
+            padding: 18px 20px; margin-bottom: 12px;
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        }
+        .booking-row.history { background: #f8fafc; opacity: 0.85; }
+        .booking-info { flex: 1; min-width: 0; }
+        .booking-teacher { font-size: 16px; font-weight: 900; color: #1e293b; }
+        .booking-time { font-size: 14px; color: var(--duo-green-dark); font-weight: 900; margin-top: 4px; }
+        .booking-row.history .booking-time { color: #94a3b8; }
+        .booking-student { font-size: 13px; color: #64748b; font-weight: 700; margin-top: 6px; }
+        .booking-cancel {
+            background: #fef2f2; color: #ef4444; border: none;
+            padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 13px;
+            cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        .booking-cancel:hover { background: #ef4444; color: white; }
+
+        .pta-empty-state { text-align: center; padding: 48px 24px; color: #94a3b8; font-weight: 800; }
+        .pta-empty-state .icon { font-size: 56px; margin-bottom: 12px; opacity: 0.5; }
+
+        .btn-primary {
+            background: var(--duo-blue); color: white; border: none;
+            padding: 12px 24px; border-radius: 16px; font-weight: 900; font-size: 14px;
+            border-bottom: 4px solid var(--duo-blue-dark); cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: all .15s;
+        }
+        .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
+        .btn-primary:active { transform: translateY(2px); border-bottom-width: 0; margin-bottom: 4px; }
+        .btn-secondary {
+            background: #f1f5f9; color: #475569; border: none;
+            padding: 12px 24px; border-radius: 16px; font-weight: 900; font-size: 14px;
+            border-bottom: 4px solid #e2e8f0; cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: all .15s;
+        }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-success {
+            background: var(--duo-green); color: white; border: none;
+            padding: 12px 24px; border-radius: 16px; font-weight: 900; font-size: 14px;
+            border-bottom: 4px solid var(--duo-green-dark); cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: all .15s;
+        }
+        .btn-success:hover { transform: translateY(-1px); filter: brightness(1.05); }
+        .btn-success:active { transform: translateY(2px); border-bottom-width: 0; margin-bottom: 4px; }
+
+        .reminder-toggle {
+            display: flex; align-items: center; gap: 12px;
+            background: #f0f9ff; border: 2px solid #bae6fd; border-radius: 16px;
+            padding: 14px 18px; margin-top: 16px; cursor: pointer; transition: all 0.2s;
+        }
+        .reminder-toggle:hover { background: #e0f2fe; border-color: var(--duo-blue); }
+        .reminder-toggle input { width: 22px; height: 22px; cursor: pointer; flex-shrink: 0; accent-color: var(--duo-blue); }
+        .reminder-toggle-label { font-size: 14px; font-weight: 800; color: #0c4a6e; flex: 1; text-align: left; }
+        .reminder-toggle-label small { display: block; font-size: 12px; font-weight: 700; color: #075985; margin-top: 2px; opacity: 0.8; }
+
+        .child-select {
+            width: 100%; padding: 14px 16px;
+            border: 2px solid #e2e8f0; border-radius: 16px;
+            font-family: 'Inter', sans-serif; font-weight: 800; font-size: 16px;
+            background: #f8fafc; outline: none; margin-bottom: 16px; cursor: pointer;
+        }
+        .child-select:focus { border-color: var(--duo-blue); background: white; }
+    </style>
+    <style id="professional-design-system">
+        :root {
+            --duo-green: #15803d;
+            --duo-green-dark: #166534;
+            --duo-blue: #2563eb;
+            --duo-blue-dark: #1d4ed8;
+            --duo-red: #dc2626;
+            --duo-orange: #b45309;
+            --text-main: #111111;
+            --text-muted: #6b7280;
+            --bg-body: #ffffff;
+            --surface-soft: #f8f9fa;
+            --surface-card: #f5f5f5;
+            --hairline: #e5e7eb;
+            --focus-ring: rgba(37, 99, 235, .16);
+        }
+
+        html { background: #fff; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #fff;
+            color: var(--text-main);
+            padding: 0 24px 96px;
+        }
+        button, input, select, textarea { font-family: inherit !important; }
+        button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+            outline: 3px solid var(--focus-ring);
+            outline-offset: 2px;
+        }
+        .page-content { max-width: 1200px; }
+
+        .card-header {
+            min-height: 106px;
+            margin: 0 calc(50% - 50vw) 36px;
+            padding: 18px max(24px, calc((100vw - 1200px) / 2));
+            border: 0;
+            border-bottom: 1px solid var(--hairline);
+            border-radius: 0;
+            box-shadow: none;
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            align-items: center;
+            gap: 28px;
+            text-align: left;
+            overflow: visible;
+        }
+        .card-header::before { display: none; }
+        .brand-lockup { display: flex; align-items: center; gap: 12px; }
+        .brand-logo { width: clamp(30px, 4vw, 42px); height: clamp(30px, 4vw, 42px); object-fit: contain; }
+        .brand-name { font-size: 14px; font-weight: 650; line-height: 1.35; white-space: nowrap; }
+        .page-intro { min-width: 0; }
+        .board-title {
+            margin: 0 0 6px;
+            color: #111;
+            font-size: clamp(30px, 4vw, 42px);
+            line-height: 1.08;
+            font-weight: 650;
+            letter-spacing: -.045em;
+        }
+        .board-subtitle {
+            display: block;
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        #bulletin-board {
+            margin-bottom: 18px;
+            border: 1px solid var(--hairline);
+            border-radius: 12px;
+            box-shadow: none;
+        }
+        .bulletin-header {
+            min-height: 52px;
+            padding: 10px 16px;
+            background: #fff;
+            border-bottom: 1px solid var(--hairline);
+            flex-wrap: nowrap;
+        }
+        .bulletin-dots { display: none; }
+        .bulletin-title {
+            margin: 0;
+            color: #111;
+            font-size: 14px;
+            line-height: 1.4;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+        .bulletin-title::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin-right: 9px;
+            border-radius: 50%;
+            background: #16a34a;
+        }
+        .bulletin-toggle-btn {
+            min-height: 40px;
+            padding: 8px 10px;
+            background: transparent;
+            color: #374151;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .bulletin-toggle-btn:hover { background: var(--surface-soft); transform: none; }
+        .bulletin-body { grid-template-columns: 1.35fr 1fr; }
+        .booking-window-panel, .announcement-panel { padding: 22px 24px; }
+        .booking-window-panel { background: #fff; border-right: 1px solid var(--hairline); }
+        .panel-label {
+            margin-bottom: 16px;
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .02em;
+            text-transform: none;
+        }
+        .time-row { display: inline-flex; width: calc(50% - 8px); gap: 10px; margin: 0; vertical-align: top; }
+        .time-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--surface-soft) !important; font-size: 14px; }
+        .time-label { color: #6b7280; font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+        .time-value { margin-top: 3px; color: #111; font-size: 14px; font-weight: 600; line-height: 1.4; }
+        .status-badge-inline { margin-top: 18px; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+        .countdown-box { margin-top: 18px; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--surface-soft); }
+        .countdown-label { font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+        .cd-block { min-width: 30px; padding: 4px 5px; border-radius: 5px; background: #111; font-size: 14px; font-weight: 600; box-shadow: none; }
+        .cd-sep { font-size: 14px; }
+        .announcement-item { margin: 0 0 8px; padding: 12px; background: var(--surface-soft); border: 1px solid var(--hairline); border-radius: 8px; }
+        .ann-icon { color: #6b7280; font-size: 15px; }
+        .ann-text { color: #374151; font-size: 13px; line-height: 1.5; font-weight: 400; }
+        .announcement-empty { min-height: 72px; color: #898989; font-size: 13px; font-weight: 400; }
+
+        .controls-bar { margin: 0; }
+        .status-pill { display: none; }
+        .board {
+            min-height: 520px;
+            padding: 0;
+            background: #fff;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        .board-toolbar {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+            margin: 0 0 20px;
+            padding: 0;
+            border: 0;
+        }
+        #board-toolbar { display: grid !important; }
+        .progress-steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--hairline);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .progress-steps > i, .progress-steps > svg { display: none !important; }
+        .step {
+            min-height: 46px;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            color: #6b7280;
+            border-radius: 8px;
+        }
+        .step + .step { border-left: 1px solid var(--hairline); border-radius: 0; }
+        .step-number {
+            width: 26px;
+            height: 26px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #d1d5db;
+            border-radius: 50%;
+            background: #f9fafb;
+            color: #4b5563;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .step.active { color: #1d4ed8; font-weight: 600; }
+        .step.active .step-number { background: #2563eb; border-color: #2563eb; color: #fff; }
+        .search-box { max-width: none; }
+        .search-box::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            z-index: 1;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+        }
+        .search-input, .gate-input, .saas-input, .child-select {
+            min-height: 44px;
+            padding: 11px 14px;
+            border: 1px solid var(--hairline);
+            border-radius: 8px;
+            background: #fff;
+            color: #111;
+            font-size: 14px;
+            font-weight: 400;
+            box-shadow: none;
+        }
+        .search-input { padding-left: 44px; }
+        .search-input:focus, .gate-input:focus, .saas-input:focus, .child-select:focus {
+            border-color: #2563eb;
+            background: #fff;
+            box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+
+        .subjects-grid { display: grid; grid-template-columns: 1fr; gap: 0; border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; }
+        .subject-card, .teacher-select-card {
+            position: relative;
+            min-height: 68px;
+            padding: 12px 16px;
+            display: grid;
+            grid-template-columns: 40px 1fr auto;
+            gap: 14px;
+            align-items: center;
+            text-align: left;
+            background: #fff;
+            border: 0;
+            border-bottom: 1px solid var(--hairline);
+            border-radius: 0;
+            box-shadow: none;
+            transition: background-color .16s ease;
+        }
+        .subject-card:last-child, .teacher-select-card:last-child { border-bottom: 0; }
+        .subject-card::after, .teacher-select-card::after {
+            content: '';
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+        }
+        .subject-card:hover, .teacher-select-card:hover { transform: none; background: var(--surface-soft); border-color: transparent; box-shadow: none; }
+        .subject-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #2563eb;
+            font-size: 16px;
+        }
+        .subject-name, .ts-name { color: #111; font-size: 16px; line-height: 1.3; font-weight: 600; }
+        .subject-count, .ts-meta {
+            grid-column: 3;
+            grid-row: 1;
+            margin-right: 20px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: var(--surface-card);
+            color: #6b7280;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .teacher-select-card { grid-template-columns: 48px 1fr auto; }
+        .ts-avatar-wrapper { width: 42px; height: 42px; margin: 0; }
+        .teacher-select-card:hover .ts-avatar { transform: none; }
+        .ts-avatar img { border-width: 1px !important; box-shadow: none !important; }
+
+        .back-btn, .btn-primary, .btn-secondary, .btn-success, .gate-btn, .landing-enter-btn {
+            min-height: 44px;
+            padding: 11px 18px;
+            border: 1px solid var(--hairline);
+            border-radius: 8px;
+            background: #fff;
+            color: #111;
+            font-size: 14px;
+            line-height: 1;
+            font-weight: 600;
+            box-shadow: none;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .btn-primary, .btn-success, .gate-btn, .landing-enter-btn { border-color: #111; background: #111; color: #fff; }
+        .back-btn:hover, .btn-secondary:hover { transform: none; background: var(--surface-soft); border-color: #d1d5db; }
+        .btn-primary:hover, .btn-success:hover, .gate-btn:hover, .landing-enter-btn:hover { transform: none; background: #242424; filter: none; }
+        .teacher-card { padding: 28px; gap: 28px; border: 1px solid var(--hairline); border-radius: 12px; box-shadow: none; }
+        .teacher-avatar-large { width: 72px; height: 72px; }
+        .teacher-name-large { margin-bottom: 10px; font-size: 26px; font-weight: 650; letter-spacing: -.03em; }
+        .teacher-meta-tag { padding: 6px 10px; background: var(--surface-card); border-radius: 999px; color: #4b5563; font-size: 12px; font-weight: 500; }
+        .teacher-resume-note { padding: 18px; background: var(--surface-soft); border: 1px solid var(--hairline); border-radius: 10px; }
+        .note-title { color: #6b7280; font-weight: 600; letter-spacing: .02em; }
+        .note-content { color: #374151; font-size: 14px; font-weight: 400; }
+        .slots-area { padding-top: 24px; border-top: 1px solid var(--hairline); }
+        .slots-area-title { margin-bottom: 18px; font-size: 17px; font-weight: 600; }
+        .date-label { margin-bottom: 12px; color: #374151; font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+        .slot-btn { min-height: 44px; padding: 10px 16px; border: 1px solid var(--hairline); border-radius: 8px; color: #111; font-size: 14px; font-weight: 600; box-shadow: none; }
+        .slot-available { border-color: #111; color: #111; }
+        .slot-available:hover { transform: none; background: #111; color: #fff; box-shadow: none; }
+
+        #floating-dock {
+            top: 18px;
+            right: max(24px, calc((100vw - 1200px) / 2));
+            transform: none;
+            z-index: 110;
+            padding: 0;
+            display: flex;
+            flex-direction: row;
+            gap: 2px;
+            background: #fff;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        #floating-dock.hidden { display: none; }
+        .dock-btn {
+            width: auto;
+            min-width: 64px;
+            height: 48px;
+            padding: 5px 10px;
+            border: 0;
+            border-radius: 8px;
+            background: #fff;
+            color: #374151;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 15px;
+        }
+        .dock-label { display: block; color: #4b5563; font-size: 10px; line-height: 1; font-weight: 500; }
+        .dock-btn:hover { transform: none; border: 0; background: var(--surface-soft); }
+        .dock-btn.dock-profile { width: 48px; min-width: 48px; border-radius: 50%; background: var(--surface-card); color: #111; font-size: 13px; font-weight: 600; }
+        .dock-btn.dock-profile .dock-label { display: none; }
+        .dock-btn.dock-logout:hover { background: #fef2f2; color: #dc2626; }
+        .dock-tooltip { display: none; }
+        .dock-badge { top: -1px; right: 4px; min-width: 17px; height: 17px; padding: 0 4px; border-width: 1px; font-size: 9px; box-shadow: none; }
+
+        #landing-page, #login-gate { background: #fff; background-image: none; }
+        .landing-card, .gate-card {
+            max-width: 460px;
+            padding: 44px;
+            border: 1px solid var(--hairline);
+            border-radius: 16px;
+            box-shadow: 0 16px 44px rgba(17, 24, 39, .08);
+        }
+        .landing-card::before, .gate-card::before { display: none; }
+        .landing-mascot { width: 112px; height: 112px; margin-bottom: 24px; }
+        .landing-title, .gate-title { color: #111; font-size: 32px; line-height: 1.15; font-weight: 650; letter-spacing: -.04em; }
+        .landing-desc, .gate-desc { color: #6b7280; font-size: 15px; font-weight: 400; line-height: 1.6; }
+        .landing-enter-btn { padding: 14px 28px; }
+        .gate-icon { font-size: 38px; }
+        .gate-input { text-align: left; }
+        .gate-input.code-input { text-align: center; font-size: 26px; letter-spacing: 8px; }
+        .gate-link { color: #2563eb; font-size: 13px; font-weight: 500; }
+        #loading-overlay { background: #fff; }
+
+        .pta-modal-overlay { background: rgba(17,17,17,.42); backdrop-filter: none; }
+        .pta-modal { border: 1px solid var(--hairline); border-radius: 16px; box-shadow: 0 24px 64px rgba(0,0,0,.18); }
+        .pta-modal-header { padding: 18px 22px; border-bottom: 1px solid var(--hairline); }
+        .pta-modal-title { color: #111; font-size: 19px; font-weight: 600; }
+        .pta-modal-close { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-card); color: #374151; }
+        .pta-modal-close:hover { transform: none; background: #e5e7eb; color: #111; }
+        .pta-modal-body { padding: 22px; }
+        .pta-modal-footer { padding: 16px 22px; border-top: 1px solid var(--hairline); }
+        .pta-tabs { border-radius: 10px; background: var(--surface-card); }
+        .pta-tab { min-height: 40px; border-radius: 8px; color: #6b7280; font-size: 13px; font-weight: 500; }
+        .pta-tab.active { color: #111; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+        .child-row, .booking-row { padding: 14px 16px; border: 1px solid var(--hairline); border-radius: 10px; }
+        .child-row:hover { transform: none; border-color: #d1d5db; }
+        .child-name, .booking-teacher { color: #111; font-weight: 600; }
+        .add-child-form { padding: 18px; background: var(--surface-soft); border: 1px solid var(--hairline); border-radius: 10px; }
+
+        @media (max-width: 980px) {
+            .card-header { grid-template-columns: 180px 1fr; padding-right: 310px; }
+            #floating-dock { right: 18px; }
+            .dock-btn { min-width: 52px; padding-inline: 6px; }
+        }
+
+        @media (max-width: 767px) {
+            body { padding: 0 16px calc(96px + env(safe-area-inset-bottom)); }
+            .page-content { max-width: none; }
+            .card-header {
+                min-height: auto;
+                margin-bottom: 22px;
+                padding: 12px 16px 22px;
+                grid-template-columns: 1fr;
+                gap: 22px;
+            }
+            .brand-logo { width: 28px; height: 28px; }
+            .brand-name { font-size: 13px; }
+            .board-title { font-size: 28px; }
+            .board-subtitle { font-size: 15px; }
+            #bulletin-board { margin-bottom: 14px; }
+            .bulletin-header { min-height: 48px; }
+            .bulletin-body { grid-template-columns: 1fr; }
+            .booking-window-panel { padding: 16px; border-right: 0; border-bottom: 1px solid var(--hairline); }
+            .announcement-panel { padding: 16px; }
+            .time-row { width: calc(50% - 4px); }
+            .time-icon { display: none; }
+            .time-value { font-size: 12px; }
+            .countdown-box { align-items: flex-start; }
+            .progress-steps { padding: 5px; }
+            .step { min-height: 42px; gap: 5px; font-size: 11px; }
+            .step-number { width: 24px; height: 24px; font-size: 11px; }
+            .subjects-grid { grid-template-columns: 1fr; gap: 0; }
+            .subject-card, .teacher-select-card { min-height: 64px; padding: 10px 12px; border-radius: 0; gap: 11px; }
+            .subject-icon { width: 34px; height: 34px; font-size: 15px; }
+            .subject-name, .ts-name { font-size: 15px; }
+            .subject-count { margin-right: 12px; }
+            .teacher-resume-header { flex-direction: row; text-align: left; align-items: flex-start; }
+            .teacher-meta-tags { justify-content: flex-start; }
+            .teacher-card { padding: 18px; }
+            .teacher-avatar-large { width: 60px; height: 60px; }
+            .teacher-name-large { font-size: 22px; }
+            .slots-row { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+            .slot-btn { width: 100%; }
+            #floating-dock {
+                top: auto;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                transform: none;
+                min-height: 68px;
+                padding: 8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+                justify-content: space-around;
+                border-top: 1px solid var(--hairline);
+            }
+            .dock-btn { flex: 1; min-width: 0; height: 52px; padding: 4px; }
+            .dock-btn.dock-profile { width: auto; min-width: 0; border-radius: 8px; background: #fff; color: #2563eb; }
+            .dock-btn.dock-profile .dock-label { display: block; color: #2563eb; }
+            .dock-btn.dock-logout { display: none; }
+            .dock-label { font-size: 10px; }
+            .dock-badge { right: 18%; }
+            .landing-card, .gate-card { padding: 32px 22px; }
+            .landing-mascot { width: 92px; height: 92px; }
+            .pta-modal-overlay { align-items: flex-end; padding: 0; }
+            .pta-modal { max-height: 92dvh; border-radius: 16px 16px 0 0; border-bottom: 0; }
+            .pta-modal-body { padding: 18px; }
+            .form-row, .form-row.form-row-2col { grid-template-columns: 1fr; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body>
+
+
+<!-- ═══ Landing Page (0 Firebase reads) ═══ -->
+<div id="landing-page">
+    <div class="landing-card">
+        <img src="logo.png" alt="IBSH Logo" class="landing-mascot">
+        <h1 class="landing-title">PTA Open Hour</h1>
+        <p class="landing-desc">Book a one-on-one meeting with your child's teachers.</p>
+        <button class="landing-enter-btn" onclick="window.startApp()">
+            <i class="fas fa-door-open"></i> Enter
+        </button>
+        <div class="landing-footer">Portfolio demo · fictional families, teachers and bookings</div>
+    </div>
+</div>
+
+
+<div id="loading-overlay" class="hidden">
+    <img src="logo.png" alt="IBSH Logo" style="width:80px;height:80px;object-fit:contain;">
+    <div style="font-weight:900;color:var(--duo-green);font-size:24px;letter-spacing:1px;text-transform:uppercase;">Loading...</div>
+</div>
+
+
+<!-- ═══ LOGIN GATE ═══ -->
+<div id="login-gate" class="hidden">
+    <div class="gate-card">
+        <div class="gate-step active" id="gate-step-email">
+            <div class="gate-icon">📧</div>
+            <h1 class="gate-title">Sign in to PTA Open Hour</h1>
+            <p class="gate-desc">Enter your email — we'll send a 6-digit verification code so we can keep your bookings safe across sessions.</p>
+            <input id="gate-email-input" type="email" class="gate-input" placeholder="family@demo.local" autocomplete="email">
+            <button class="gate-btn" id="gate-send-btn"><i class="fas fa-paper-plane"></i> Send Code</button>
+            <div class="gate-error" id="gate-email-error"></div>
+        </div>
+        <div class="gate-step" id="gate-step-code">
+            <div class="gate-icon">🔐</div>
+            <h1 class="gate-title">Check Your Email</h1>
+            <p class="gate-desc">We sent a 6-digit code to:</p>
+            <div class="gate-email-display" id="gate-email-display">—</div>
+            <input id="gate-code-input" type="text" inputmode="numeric" maxlength="6" class="gate-input code-input" placeholder="000000">
+            <button class="gate-btn" id="gate-verify-btn"><i class="fas fa-check"></i> Verify &amp; Enter</button>
+            <button class="gate-link" id="gate-back-btn">← Wrong email? Change it</button>
+            <div class="gate-error" id="gate-code-error"></div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Responsive account navigation: header actions on desktop, bottom navigation on mobile -->
+<div id="floating-dock" class="hidden">
+    <button class="dock-btn dock-profile" id="dock-profile-btn" aria-label="Profile">
+        <span id="dock-profile-initial">?</span>
+        <span class="dock-label">Profile</span>
+        <span class="dock-tooltip" id="dock-profile-tooltip">—</span>
+    </button>
+    <button class="dock-btn" id="dock-children-btn" aria-label="Children">
+        <i class="fas fa-users" aria-hidden="true"></i>
+        <span class="dock-label">Children</span>
+        <span class="dock-badge" id="dock-children-badge">0</span>
+        <span class="dock-tooltip"> My Children</span>
+    </button>
+    <button class="dock-btn" id="dock-parents-btn" aria-label="Guardians">
+        <i class="fas fa-shield-alt" aria-hidden="true"></i>
+        <span class="dock-label">Guardians</span>
+        <span class="dock-badge" id="dock-parents-badge">0</span>
+        <span class="dock-tooltip">Parents</span>
+    </button>
+    <button class="dock-btn" id="dock-bookings-btn" aria-label="My bookings">
+        <i class="far fa-calendar-alt" aria-hidden="true"></i>
+        <span class="dock-label">Bookings</span>
+        <span class="dock-badge" id="dock-bookings-badge">0</span>
+        <span class="dock-tooltip">My Bookings</span>
+    </button>
+    <button class="dock-btn dock-logout" id="dock-logout-btn" aria-label="Reset demo data">
+        <i class="fas fa-rotate-left" aria-hidden="true"></i>
+        <span class="dock-label">Reset</span>
+        <span class="dock-tooltip">Reset demo</span>
+    </button>
+</div>
+
+
+<!-- ═══ CHILDREN MODAL ═══ -->
+<div id="children-modal" class="pta-modal-overlay hidden">
+    <div class="pta-modal">
+        <div class="pta-modal-header">
+            <div class="pta-modal-title">🧑‍🎓 My Children</div>
+            <button class="pta-modal-close" data-close="children-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="pta-modal-body">
+            <div id="children-list"></div>
+            <div class="add-child-form" id="child-form-area">
+                <div style="font-size:14px;font-weight:900;color:#1e293b;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span id="child-form-mode-icon">➕</span>
+                    <span id="child-form-mode-label">Add a Child</span>
+                </div>
+                <div class="form-row form-row-2col">
+                    <div>
+                        <label class="form-label">Name *</label>
+                        <input id="child-name-input" class="saas-input" style="margin-bottom:0;" placeholder="e.g. Wang Xiao Ming" maxlength="50">
+                    </div>
+                    <div>
+                        <label class="form-label">Grade &amp; Class *</label>
+                        <input id="child-grade-input" class="saas-input" style="margin-bottom:0;" placeholder="e.g. 5A or 10B" maxlength="20">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">Notes (optional)</label>
+                    <textarea id="child-notes-input" class="saas-input" style="margin-bottom:0;" rows="2" placeholder="e.g. Allergic to peanuts" maxlength="200"></textarea>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+                    <button class="btn-secondary" id="child-form-cancel" style="display:none;">Cancel</button>
+                    <button class="btn-success" id="child-form-save"><i class="fas fa-save"></i> <span id="child-form-save-label">Add Child</span></button>
+                </div>
+            </div>
+        </div>
+        <div class="pta-modal-footer">
+            <button class="btn-secondary" data-close="children-modal">Close</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══ PARENTS MODAL ═══ -->
+<div id="parents-modal" class="pta-modal-overlay hidden">
+    <div class="pta-modal">
+        <div class="pta-modal-header">
+            <div class="pta-modal-title">👨‍👩‍👧 My Family</div>
+            <button class="pta-modal-close" data-close="parents-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="pta-modal-body">
+            <div id="parents-list"></div>
+            <div class="add-child-form" id="parent-form-area">
+                <div style="font-size:14px;font-weight:900;color:#1e293b;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span id="parent-form-mode-icon">➕</span>
+                    <span id="parent-form-mode-label">Add a Parent / Guardian</span>
+                </div>
+                <div class="form-row form-row-2col">
+                    <div>
+                        <label class="form-label">Name *</label>
+                        <input id="parent-name-input" class="saas-input" style="margin-bottom:0;" placeholder="e.g. Wang Mei Ling" maxlength="50">
+                    </div>
+                    <div>
+                        <label class="form-label">Relation</label>
+                        <input id="parent-relation-input" class="saas-input" style="margin-bottom:0;" placeholder="e.g. 媽媽 / Father" maxlength="20">
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+                    <button class="btn-secondary" id="parent-form-cancel" style="display:none;">Cancel</button>
+                    <button class="btn-success" id="parent-form-save"><i class="fas fa-save"></i> <span id="parent-form-save-label">Add Parent</span></button>
+                </div>
+            </div>
+        </div>
+        <div class="pta-modal-footer">
+            <button class="btn-secondary" data-close="parents-modal">Close</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══ MY BOOKINGS MODAL ═══ -->
+<div id="bookings-modal" class="pta-modal-overlay hidden">
+    <div class="pta-modal">
+        <div class="pta-modal-header">
+            <div class="pta-modal-title">📋 My Bookings</div>
+            <button class="pta-modal-close" data-close="bookings-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="pta-modal-body">
+            <div class="pta-tabs">
+                <button class="pta-tab active" data-bk-tab="active">
+                    <i class="fas fa-clock"></i> Active <span class="tab-count" id="bookings-tab-active-count">0</span>
+                </button>
+                <button class="pta-tab" data-bk-tab="history">
+                    <i class="fas fa-history"></i> History <span class="tab-count" id="bookings-tab-history-count">0</span>
+                </button>
+            </div>
+            <div id="bookings-list-active"></div>
+            <div id="bookings-list-history" style="display:none;"></div>
+        </div>
+        <div class="pta-modal-footer">
+            <button class="btn-secondary" data-close="bookings-modal">Close</button>
+        </div>
+    </div>
+</div>
+
+
+<div class="page-content" id="main-content" style="display:none;">
+
+
+    <!-- Product header -->
+    <div class="card-header">
+        <div class="brand-lockup">
+            <img src="logo.png" alt="IBSH" class="brand-logo">
+            <div class="brand-name">IBSH PTA Open Hour</div>
+        </div>
+        <div class="page-intro">
+            <h1 class="board-title">Book a teacher meeting</h1>
+            <div class="board-subtitle">Choose a department, teacher, and available time.</div>
+        </div>
+    </div>
+
+
+    <!-- ╔══════════════════════════╗
+         ║   BULLETIN BOARD         ║
+         ╚══════════════════════════╝ -->
+    <div id="bulletin-board">
+        <div class="bulletin-header">
+            <div style="display:flex;align-items:center;">
+                <div class="bulletin-dots">
+                    <div class="bulletin-dot" style="background:#ef4444;"></div>
+                    <div class="bulletin-dot" style="background:#f59e0b;"></div>
+                    <div class="bulletin-dot" style="background:#22c55e;"></div>
+                </div>
+                <span class="bulletin-title">Booking details</span>
+            </div>
+            <button class="bulletin-toggle-btn" id="bulletin-toggle-btn" onclick="toggleBulletin()">
+                <i class="fas fa-chevron-up" id="bulletin-chevron"></i>
+                <span id="bulletin-toggle-text">Hide details</span>
+            </button>
+        </div>
+
+
+        <div id="bulletin-content">
+            <div class="bulletin-body">
+                <!-- Left: Booking Window + Countdown -->
+                <div class="booking-window-panel">
+                    <div class="panel-label"><i class="fas fa-calendar-alt"></i> Booking Window</div>
+
+
+                    <div class="time-row">
+                        <div class="time-icon open-icon"><i class="fas fa-door-open" style="color:#16a34a;"></i></div>
+                        <div>
+                            <div class="time-label">Opens</div>
+                            <div class="time-value" id="display-start-time">—</div>
+                        </div>
+                    </div>
+                    <div class="time-row">
+                        <div class="time-icon close-icon"><i class="fas fa-door-closed" style="color:#dc2626;"></i></div>
+                        <div>
+                            <div class="time-label">Closes</div>
+                            <div class="time-value" id="display-end-time">—</div>
+                        </div>
+                    </div>
+
+
+                    <div id="status-badge-inline" class="status-badge-inline" style="display:none;">
+                        <i class="fas fa-circle" style="font-size:10px;"></i>
+                        <span id="status-badge-text"></span>
+                    </div>
+
+
+                    <div class="countdown-box hidden" id="countdown-box">
+                        <div class="countdown-label" id="countdown-label">Closes in</div>
+                        <div class="countdown-digits">
+                            <div class="cd-block" id="cd-days" style="display:none;">0</div>
+                            <span id="cd-days-sep" style="display:none;color:#94a3b8;font-weight:900;font-size:16px;margin-right:4px;">d</span>
+                            <div class="cd-block" id="cd-hours">00</div>
+                            <span class="cd-sep">:</span>
+                            <div class="cd-block" id="cd-minutes">00</div>
+                            <span class="cd-sep">:</span>
+                            <div class="cd-block" id="cd-seconds">00</div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Right: Announcements -->
+                <div class="announcement-panel">
+                    <div class="panel-label"><i class="fas fa-bullhorn"></i> Announcements</div>
+                    <div id="announcement-items">
+                        <div class="announcement-empty" id="announcement-empty">
+                            <i class="fas fa-inbox" style="font-size:28px;"></i>
+                            <span>No announcements at this time</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Controls (狀態) -->
+    <div class="controls-bar">
+        <div id="status-pill" class="status-pill status-checking">
+            <i class="fas fa-circle-notch fa-spin"></i> Checking...
+        </div>
+        <!-- My Bookings 已搬到右側 Floating Dock -->
+    </div>
+
+
+    <!-- Main Board 寬敞舒適主區塊 -->
+    <div class="board">
+        <div class="board-toolbar" id="board-toolbar">
+            <!-- 升級版三步驟進度條 -->
+            <div class="progress-steps">
+                <span class="step active" id="step-1-nav"><span class="step-number">1</span><span>Department</span></span>
+                <i class="fas fa-chevron-right" style="color:#cbd5e1;font-size:14px;" id="nav-arrow-1"></i>
+                <span class="step" id="step-2-nav"><span class="step-number">2</span><span>Teacher</span></span>
+                <i class="fas fa-chevron-right" style="color:#cbd5e1;font-size:14px;display:none;" id="nav-arrow-2"></i>
+                <span class="step" id="step-3-nav"><span class="step-number">3</span><span>Select time</span></span>
+            </div>
+            <div class="search-box">
+                <input type="text" id="search-input" class="search-input" placeholder="Search teacher or subject...">
+            </div>
+        </div>
+
+        <div id="empty-state" class="empty-state" style="display:none;">
+            <i class="fas fa-calendar-times empty-icon"></i>
+            <h2 id="empty-state-title">Schedule Closed</h2>
+            <p id="empty-state-text">Please check back later.</p>
+        </div>
+
+        <!-- Step 1: 科目列表 -->
+        <div id="step-subject" style="display:none;">
+            <div class="subjects-grid" id="subject-list"></div>
+        </div>
+
+        <!-- Step 2: 該科目的老師列表 (無時間按鈕) -->
+        <div id="step-teacher" style="display:none;">
+            <div style="margin-bottom:32px;">
+                <button class="back-btn" id="btn-back-to-subject">
+                    <i class="fas fa-arrow-left"></i> Back to Departments
+                </button>
+            </div>
+            <!-- 使用 grid 排版老師清單 -->
+            <div class="subjects-grid" id="teacher-list"></div>
+        </div>
+
+
+        <!-- Step 3: 點進去老師後的時間表與簡歷 -->
+        <div id="step-time" style="display:none;">
+            <div style="margin-bottom:32px;">
+                <button class="back-btn" id="btn-back-to-teachers">
+                    <i class="fas fa-arrow-left"></i> Back to Teachers
+                </button>
+            </div>
+            <div id="single-teacher-container"></div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+function toggleBulletin() {
+    const content = document.getElementById('bulletin-content');
+    const chevron = document.getElementById('bulletin-chevron');
+    const text    = document.getElementById('bulletin-toggle-text');
+    const isHidden = content.style.display === 'none';
+    content.style.display = isHidden ? '' : 'none';
+    chevron.className = isHidden ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+    text.innerText    = isHidden ? 'Hide details' : 'Show details';
+}
+</script>
+
+<script type="module">
+    import { initializeApp, getFirestore, doc, collection, getDoc, getDocs, onSnapshot, runTransaction, query, where, deleteDoc, updateDoc, addDoc, setDoc, getAuth, signInAnonymously, onAuthStateChanged, signOut } from "./demo-pta-firebase.js";
+    // ✅ 加入 setDoc (要寫家長 children profile)
+
+
+    const firebaseConfig = {};
+
+
+    const GAS_URL = "";
+    // ✅ GAS Secret Token（必須和 GAS 端的 CONFIG.API_SECRET 一致）
+    const GAS_SECRET = "demo-disabled";
+
+
+    function escapeHtml(t) {
+        if (!t) return "";
+        return t.toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+    }
+
+    function normalizeEmail(email) {
+        return (email || "").toString().trim().toLowerCase();
+    }
+
+    function getSubjectIcon(sub) {
+        const s = (sub||"").toLowerCase();
+        if (s.includes('math')) return '<i class="fas fa-calculator" aria-hidden="true"></i>';
+        if (s.includes('english')) return '<i class="fas fa-book-open" aria-hidden="true"></i>';
+        if (s.includes('science')||s.includes('physics')||s.includes('chemistry')) return '<i class="fas fa-flask" aria-hidden="true"></i>';
+        if (s.includes('humanities')||s.includes('wss')||s.includes('social')) return '<i class="fas fa-globe-asia" aria-hidden="true"></i>';
+        if (s.includes('a&t')) return '<i class="fas fa-palette" aria-hidden="true"></i>';
+        if (s.includes('pe')||s.includes('physical')) return '<i class="fas fa-running" aria-hidden="true"></i>';
+        if (s.includes('chinese')) return '<i class="fas fa-language" aria-hidden="true"></i>';
+        if (s.includes('css')) return '<i class="fas fa-landmark" aria-hidden="true"></i>';
+        if (s.includes('elementary')) return '<i class="fas fa-shapes" aria-hidden="true"></i>';
+        return '<i class="fas fa-school" aria-hidden="true"></i>';
+    }
+
+
+    const getMascotSVG = (id) => {
+        const animals = ['🦊', '🐱', '🐼', '🐨', '🐶', '🐰', '🐯', '🐻', '🐮', '🐷', '🐸', '🐵', '🦄', '🦖', '🐙', '🦉'];
+        const colors = ['#FFD1DC', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF', '#E8BAFF', '#FFDFD3', '#F4F4F8', '#E2F0CB', '#FFB7B2', '#C7CEEA', '#B5EAD7', '#FF9CEE', '#B2FBA5', '#84D8FF', '#DDF4C5'];
+        const borders = ['#FF9EBB', '#FFB56B', '#E5E56B', '#6BE58B', '#6BA4FF', '#CA6BFF', '#FF9E8B', '#D1D1E0', '#B0D878', '#FF7A70', '#8F9DE3', '#72D1AC', '#FF5CE5', '#60E540', '#40B8FF', '#58CC02'];
+        const i = id % animals.length;
+        return `<svg viewBox="0 0 100 100" style="width:100%;height:100%;"><circle cx="50" cy="50" r="46" fill="${colors[i]}" stroke="${borders[i]}" stroke-width="8"/><text x="50" y="68" font-size="45" text-anchor="middle">${animals[i]}</text></svg>`;
+    };
+
+
+    async function callGAS(payload) {
+        console.info('[PTA Demo] Simulated notification:', payload && payload.action);
+        return { ok: true, demo: true, code: '246810' };
+        const url = window._GAS_URL || GAS_URL;
+        // ✅ 自動附加 secret token，GAS 端會驗證
+        payload.secret = GAS_SECRET;
+        try {
+            const r = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(payload)
+            });
+            const text = await r.text();
+            try {
+                return JSON.parse(text);
+            } catch {
+                return { ok: false, error: text || `HTTP ${r.status}` };
+            }
+        }
+        catch(e) {
+            return { ok:false, error: e?.message || 'Network error' };
+        }
+    }
+    const APP_TIMEZONE = 'Asia/Taipei';
+
+    // ✅ 新增：防抖函式，避免搜尋每打一個字就觸發重新渲染
+    function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+    function parseConfigDate(value) {
+        if (!value) return null;
+        if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+        if (typeof value?.toDate === 'function') {
+            const dt = value.toDate();
+            return isNaN(dt.getTime()) ? null : dt;
+        }
+        if (typeof value === 'number') {
+            const dt = new Date(value);
+            return isNaN(dt.getTime()) ? null : dt;
+        }
+        if (typeof value !== 'string') return null;
+
+        const raw = value.trim();
+        if (!raw) return null;
+
+        // 若後台已存完整 ISO 字串（含 Z 或時區 offset），直接使用。
+        if (/[zZ]$|[+\-]\d{2}:\d{2}$/.test(raw)) {
+            const dt = new Date(raw);
+            return isNaN(dt.getTime()) ? null : dt;
+        }
+
+        // 若未帶時區，視為台北時間，避免瀏覽器依本地時區亂猜。
+        const normalized = raw.replace(/\//g, '-').replace('T', ' ').replace(/\s+/g, ' ');
+        const match = normalized.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2})(?::(\d{1,2}))?(?::(\d{1,2}))?)?$/);
+        if (match) {
+            const [, year, month, day, hour = '0', minute = '0', second = '0'] = match;
+            const isoTaipei =
+                `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T` +
+                `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:${second.padStart(2, '0')}+08:00`;
+            const dt = new Date(isoTaipei);
+            return isNaN(dt.getTime()) ? null : dt;
+        }
+
+        const fallback = new Date(raw);
+        return isNaN(fallback.getTime()) ? null : fallback;
+    }
+
+    function formatDateTime(str) {
+        if (!str) return '—';
+        const dt = parseConfigDate(str);
+        if (!dt) return typeof str === 'string' ? str : '—';
+        try { return dt.toLocaleString('en-US',{ timeZone: APP_TIMEZONE, month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true }); }
+        catch { return str; }
+    }
+
+
+    function renderBulletin({ start, end, announcement }) {
+        document.getElementById('display-start-time').innerText = formatDateTime(start);
+        document.getElementById('display-end-time').innerText   = formatDateTime(end);
+
+
+        const items = document.getElementById('announcement-items');
+        const empty = document.getElementById('announcement-empty');
+        if (announcement && announcement.trim()) {
+            empty.style.display = 'none';
+            const lines = announcement.split('\n').filter(l => l.trim());
+            items.innerHTML = lines.map(l => `
+                <div class="announcement-item">
+                    <span class="ann-icon">📢</span>
+                    <span class="ann-text">${escapeHtml(l.trim())}</span>
+                </div>`).join('') + `<div id="announcement-empty" style="display:none;"></div>`;
+        }
+    }
+
+
+    // ✅ 每人最多可預約的時段數量
+    const BOOKING_LIMIT = 10;
+    // ✅ localStorage 快取 TTL（5 分鐘）
+    const CACHE_TTL = 5 * 60 * 1000;
+
+    // ✅ 防刷機制：限制 Firebase 呼叫頻率
+    const RateLimiter = {
+        _calls: {},       // { key: [timestamp, timestamp, ...] }
+        MAX_CALLS: 15,    // 每個 key 在 window 內最多呼叫次數
+        WINDOW_MS: 60000, // 60 秒視窗
+        COOLDOWN_MS: 120000, // 觸發限制後冷卻 2 分鐘
+
+        check(key = 'global') {
+            const now = Date.now();
+            // 檢查是否在冷卻期
+            const cooldownKey = `rl_cooldown_${key}`;
+            const cooldownUntil = parseInt(sessionStorage.getItem(cooldownKey) || '0');
+            if (now < cooldownUntil) {
+                console.warn(`🛑 Rate limited: ${key} (cooldown until ${new Date(cooldownUntil).toLocaleTimeString()})`);
+                return false;
+            }
+            // 清除過期記錄
+            if (!this._calls[key]) this._calls[key] = [];
+            this._calls[key] = this._calls[key].filter(t => now - t < this.WINDOW_MS);
+            // 檢查是否超過上限
+            if (this._calls[key].length >= this.MAX_CALLS) {
+                sessionStorage.setItem(cooldownKey, (now + this.COOLDOWN_MS).toString());
+                console.warn(`🛑 Rate limit triggered for: ${key}. Cooling down ${this.COOLDOWN_MS/1000}s`);
+                return false;
+            }
+            this._calls[key].push(now);
+            return true;
+        }
+    };
+
+    const app = {
+        db: null, auth: null,
+        paths: {
+            teachersCollection: 'artifacts/ibsh-pta-v2/public/data/teachers',
+            bookings: 'artifacts/ibsh-pta-v2/private_bookings',
+            profiles: 'artifacts/ibsh-pta-v2/private_profiles',
+            config: 'artifacts/ibsh-pta-v2/public/system_settings',
+            logs: 'artifacts/ibsh-pta-v2/system_logs'
+        },
+        data: { teachers: [] },
+        currentView: 'subject', currentSubject: null, currentTeacher: null,
+        lastBookingTime: 0, isOpen: false, countdownTimer: null, slotSnapshotUnsubscribe: null,
+
+        // ─── 新會話狀態 ───
+        verifiedEmail: null,
+        children: [],
+        parents: [],
+        myBookings: [],
+        editingChildId: null,
+        editingParentId: null,
+        bookingsUnsub: null,
+        _gatePendingEmail: null,
+        _bookingsTab: 'active',
+
+        init() {
+            const fa = initializeApp(firebaseConfig);
+            this.db = getFirestore(fa); this.auth = getAuth(fa);
+            localStorage.setItem('pta_verified_email', 'family@demo.local');
+
+            // 返回按鈕
+            document.getElementById('btn-back-to-subject').addEventListener('click', () => this.showSubjects());
+            document.getElementById('btn-back-to-teachers').addEventListener('click', () => {
+                if(document.getElementById('search-input').value.trim()) {
+                    this.handleSearch(document.getElementById('search-input').value);
+                } else if(this.currentSubject) {
+                    this.selectSubject(this.currentSubject);
+                } else {
+                    this.showSubjects();
+                }
+            });
+
+            // 搜尋
+            const debouncedSearch = debounce(v => this.handleSearch(v), 300);
+            document.getElementById('search-input').addEventListener('input', e => debouncedSearch(e.target.value));
+
+            // 登入閘
+            document.getElementById('gate-send-btn').addEventListener('click', () => this.gateSendCode());
+            document.getElementById('gate-verify-btn').addEventListener('click', () => this.gateVerifyCode());
+            document.getElementById('gate-back-btn').addEventListener('click', () => this.gateShowStep('email'));
+            document.getElementById('gate-email-input').addEventListener('keydown', e => { if (e.key === 'Enter') this.gateSendCode(); });
+            document.getElementById('gate-code-input').addEventListener('keydown', e => { if (e.key === 'Enter') this.gateVerifyCode(); });
+
+            // Floating Dock
+            document.getElementById('dock-children-btn').addEventListener('click', () => this.openChildrenModal());
+            document.getElementById('dock-parents-btn').addEventListener('click', () => this.openParentsModal());
+            document.getElementById('dock-bookings-btn').addEventListener('click', () => this.openBookingsModal());
+            document.getElementById('dock-logout-btn').addEventListener('click', () => this.logout());
+            document.getElementById('dock-profile-btn').addEventListener('click', () => alert(`Signed in as: ${this.verifiedEmail || 'unknown'}`));
+
+            // Modal close
+            document.querySelectorAll('[data-close]').forEach(btn => {
+                btn.addEventListener('click', () => document.getElementById(btn.dataset.close).classList.add('hidden'));
+            });
+
+            // Children form
+            document.getElementById('child-form-save').addEventListener('click', () => this.saveChild());
+            document.getElementById('child-form-cancel').addEventListener('click', () => this.resetChildForm());
+
+            // Parents form
+            document.getElementById('parent-form-save').addEventListener('click', () => this.saveParent());
+            document.getElementById('parent-form-cancel').addEventListener('click', () => this.resetParentForm());
+
+            // Bookings tabs
+            document.querySelectorAll('[data-bk-tab]').forEach(tab => {
+                tab.addEventListener('click', () => this.switchBookingsTab(tab.dataset.bkTab));
+            });
+
+            onAuthStateChanged(this.auth, async user => {
+                if (user) {
+                    try {
+                        const tokenResult = await user.getIdTokenResult(false);
+                        const claimedEmail = tokenResult.claims.verifiedEmail;
+                        const stored = localStorage.getItem('pta_verified_email');
+
+                        if (claimedEmail && stored && claimedEmail === stored) {
+                            this.verifiedEmail = claimedEmail;
+                            this.enterMainApp();
+                        } else {
+                            this.showLoginGate();
+                        }
+                    } catch (e) {
+                        console.warn('Token check failed:', e);
+                        this.showLoginGate();
+                    }
+                } else {
+                    signInAnonymously(this.auth).catch(() => {
+                        document.getElementById('loading-overlay').innerHTML = `<div style="background:white;padding:40px;border-radius:32px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.1);"><div style="font-size:64px;color:#ef4444;margin-bottom:20px;"><i class="fas fa-exclamation-circle"></i></div><h2 style="font-weight:900;font-size:28px;margin-bottom:20px;">Connection Error</h2><button onclick="location.reload()" style="background:#1e293b;color:white;padding:16px 40px;border-radius:30px;font-weight:900;font-size:16px;border:none;cursor:pointer;">Retry</button></div>`;
+                    });
+                }
+            });
+        },
+
+        // ════════════════════════════════════
+        // LOGIN GATE
+        // ════════════════════════════════════
+        showLoginGate() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('login-gate').classList.remove('hidden');
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('floating-dock').classList.add('hidden');
+            this.gateShowStep('email');
+        },
+
+        gateShowStep(step) {
+            document.querySelectorAll('.gate-step').forEach(s => s.classList.remove('active'));
+            document.getElementById(`gate-step-${step}`).classList.add('active');
+            document.getElementById('gate-email-error').innerText = '';
+            document.getElementById('gate-code-error').innerText = '';
+            if (step === 'email') {
+                setTimeout(() => document.getElementById('gate-email-input').focus(), 100);
+            } else if (step === 'code') {
+                setTimeout(() => document.getElementById('gate-code-input').focus(), 100);
+                document.getElementById('gate-code-input').value = '';
+            }
+        },
+
+        async gateSendCode() {
+            const emailInput = document.getElementById('gate-email-input');
+            const errorEl = document.getElementById('gate-email-error');
+            const btn = document.getElementById('gate-send-btn');
+            const email = normalizeEmail(emailInput.value);
+
+            errorEl.innerText = '';
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errorEl.innerText = 'Please enter a valid email address.';
+                return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            const gr = await callGAS({ action: 'generateAndSendCode', email });
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Code';
+            if (!gr.ok) {
+                errorEl.innerText = gr.error || 'Failed to send code.';
+                return;
+            }
+            this._gatePendingEmail = email;
+            document.getElementById('gate-email-display').innerText = email;
+            this.gateShowStep('code');
+        },
+
+        async gateVerifyCode() {
+            const errorEl = document.getElementById('gate-code-error');
+            const btn = document.getElementById('gate-verify-btn');
+            const code = document.getElementById('gate-code-input').value.trim();
+            const email = this._gatePendingEmail;
+
+            errorEl.innerText = '';
+            if (!/^\d{6}$/.test(code)) { errorEl.innerText = 'Enter the 6-digit code.'; return; }
+            if (!email) { errorEl.innerText = 'Session expired. Please re-enter your email.'; this.gateShowStep('email'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            const vr = await callGAS({ action: 'verifyCode', email, code, uid: this.auth.currentUser.uid });
+            if (!vr.ok) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Verify & Enter';
+                errorEl.innerText = vr.error || 'Verification failed.';
+                return;
+            }
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading session...';
+            let claimReady = false;
+            for (let i = 0; i < 3; i++) {
+                await new Promise(r => setTimeout(r, 1000));
+                const tokenResult = await this.auth.currentUser.getIdTokenResult(true);
+                if (tokenResult.claims.verifiedEmail === email) { claimReady = true; break; }
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check"></i> Verify & Enter';
+            if (!claimReady) { errorEl.innerText = 'Verification claim not ready. Please try again.'; return; }
+
+            this.verifiedEmail = email;
+            localStorage.setItem('pta_verified_email', email);
+            this.enterMainApp();
+        },
+
+        async logout() {
+            if (confirm('Reset all fictional PTA demo data?')) window.resetPTADemo();
+            return;
+            if (!confirm('Sign out? You will need to verify your email again next time.')) return;
+            if (this.bookingsUnsub) { this.bookingsUnsub(); this.bookingsUnsub = null; }
+            if (this.slotSnapshotUnsubscribe) { this.slotSnapshotUnsubscribe(); this.slotSnapshotUnsubscribe = null; }
+            localStorage.removeItem('pta_verified_email');
+            localStorage.removeItem('pta_teachers');
+            localStorage.removeItem('pta_teachers_ts');
+            this.verifiedEmail = null;
+            this.children = [];
+            this.myBookings = [];
+            try { await signOut(this.auth); } catch(e) { console.warn(e); }
+            location.reload();
+        },
+
+        // ════════════════════════════════════
+        // ENTER MAIN APP
+        // ════════════════════════════════════
+        async enterMainApp() {
+            document.getElementById('login-gate').classList.add('hidden');
+            const dock = document.getElementById('floating-dock');
+            dock.classList.remove('hidden');
+            document.getElementById('dock-profile-initial').innerText = (this.verifiedEmail || '?').charAt(0).toUpperCase();
+            document.getElementById('dock-profile-tooltip').innerText = this.verifiedEmail || '';
+
+            this.loadProfile();
+            this.subscribeMyBookings();
+            this.checkSystemConfig();
+        },
+
+        // ════════════════════════════════════
+        // PROFILE / CHILDREN
+        // ════════════════════════════════════
+        async loadProfile() {
+            try {
+                const ref = doc(this.db, this.paths.profiles, this.verifiedEmail);
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const d = snap.data();
+                    this.children = d.children || [];
+                    this.parents = d.parents || [];
+                } else {
+                    this.children = [];
+                    this.parents = [];
+                }
+                this.updateDockBadges();
+            } catch(e) {
+                console.warn('loadProfile failed:', e);
+                this.children = [];
+                this.parents = [];
+            }
+        },
+
+        async saveProfile() {
+            const ref = doc(this.db, this.paths.profiles, this.verifiedEmail);
+            const payload = {
+                email: this.verifiedEmail,
+                children: this.children,
+                parents: this.parents,
+                updatedAt: new Date().toISOString()
+            };
+            const snap = await getDoc(ref);
+            if (!snap.exists()) payload.createdAt = new Date().toISOString();
+            await setDoc(ref, payload, { merge: true });
+        },
+
+        openChildrenModal() {
+            document.getElementById('children-modal').classList.remove('hidden');
+            this.resetChildForm();
+            this.renderChildren();
+        },
+
+        renderChildren() {
+            const list = document.getElementById('children-list');
+            if (!this.children.length) {
+                list.innerHTML = `<div class="pta-empty-state"><div class="icon">👶</div><div>No children yet. Add your first one below.</div></div>`;
+                return;
+            }
+            list.innerHTML = this.children.map(c => `
+                <div class="child-row">
+                    <div class="child-avatar">${c.name ? c.name.charAt(0).toUpperCase() : '👶'}</div>
+                    <div class="child-info">
+                        <div class="child-name">${escapeHtml(c.name)}</div>
+                        <div class="child-meta">Grade ${escapeHtml(c.grade || '—')}${c.notes ? ' · ' + escapeHtml(c.notes) : ''}</div>
+                    </div>
+                    <div class="child-actions">
+                        <button class="child-btn edit" data-edit="${escapeHtml(c.id)}"><i class="fas fa-edit"></i></button>
+                        <button class="child-btn del" data-del="${escapeHtml(c.id)}"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            list.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => this.editChild(b.dataset.edit)));
+            list.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => this.deleteChild(b.dataset.del)));
+        },
+
+        editChild(id) {
+            const c = this.children.find(x => x.id === id);
+            if (!c) return;
+            this.editingChildId = id;
+            document.getElementById('child-name-input').value = c.name || '';
+            // 兼容舊資料：如果有 className，合併到 grade
+            document.getElementById('child-grade-input').value = c.grade
+                ? (c.className ? c.grade + c.className : c.grade)
+                : '';
+            document.getElementById('child-notes-input').value = c.notes || '';
+            document.getElementById('child-form-mode-icon').innerText = '✏️';
+            document.getElementById('child-form-mode-label').innerText = 'Edit Child';
+            document.getElementById('child-form-save-label').innerText = 'Save Changes';
+            document.getElementById('child-form-cancel').style.display = 'inline-block';
+            document.getElementById('child-name-input').focus();
+        },
+
+        resetChildForm() {
+            this.editingChildId = null;
+            document.getElementById('child-name-input').value = '';
+            document.getElementById('child-grade-input').value = '';
+            document.getElementById('child-notes-input').value = '';
+            document.getElementById('child-form-mode-icon').innerText = '➕';
+            document.getElementById('child-form-mode-label').innerText = 'Add a Child';
+            document.getElementById('child-form-save-label').innerText = 'Add Child';
+            document.getElementById('child-form-cancel').style.display = 'none';
+        },
+
+        async saveChild() {
+            const name = document.getElementById('child-name-input').value.trim();
+            const grade = document.getElementById('child-grade-input').value.trim();
+            const notes = document.getElementById('child-notes-input').value.trim();
+
+            if (!name || !grade) { alert('Name and Grade & Class are required.'); return; }
+            if (/[<>"']/.test(name) || /[<>"']/.test(grade) || /[<>"']/.test(notes)) {
+                alert('Invalid characters detected.'); return;
+            }
+
+            const btn = document.getElementById('child-form-save');
+            btn.disabled = true;
+            try {
+                if (this.editingChildId) {
+                    const c = this.children.find(x => x.id === this.editingChildId);
+                    if (c) { c.name = name; c.grade = grade; c.notes = notes; delete c.className; }
+                } else {
+                    this.children.push({
+                        id: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                        name, grade, notes
+                    });
+                }
+                await this.saveProfile();
+                this.updateDockBadges();
+                this.resetChildForm();
+                this.renderChildren();
+            } catch(e) {
+                console.error(e);
+                alert('Failed to save child. ' + (e?.message || ''));
+            } finally {
+                btn.disabled = false;
+            }
+        },
+
+        async deleteChild(id) {
+            if (!confirm('Remove this child? Existing bookings will not be deleted.')) return;
+            this.children = this.children.filter(c => c.id !== id);
+            try {
+                await this.saveProfile();
+                this.updateDockBadges();
+                this.renderChildren();
+            } catch(e) {
+                console.error(e);
+                alert('Failed to remove child.');
+            }
+        },
+
+        // ════════════════════════════════════
+        // PARENTS / GUARDIANS
+        // ════════════════════════════════════
+        openParentsModal() {
+            document.getElementById('parents-modal').classList.remove('hidden');
+            this.resetParentForm();
+            this.renderParents();
+        },
+
+        renderParents() {
+            const list = document.getElementById('parents-list');
+            if (!this.parents.length) {
+                list.innerHTML = `<div class="pta-empty-state"><div class="icon">👨‍👩‍👧</div><div>No parents yet. Add your first one below.</div></div>`;
+                return;
+            }
+            list.innerHTML = this.parents.map(p => `
+                <div class="child-row">
+                    <div class="child-avatar" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe);">${p.name ? p.name.charAt(0).toUpperCase() : '👤'}</div>
+                    <div class="child-info">
+                        <div class="child-name">${escapeHtml(p.name)}</div>
+                        <div class="child-meta">${escapeHtml(p.relation || 'Parent / Guardian')}</div>
+                    </div>
+                    <div class="child-actions">
+                        <button class="child-btn edit" data-edit="${escapeHtml(p.id)}"><i class="fas fa-edit"></i></button>
+                        <button class="child-btn del" data-del="${escapeHtml(p.id)}"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            list.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => this.editParent(b.dataset.edit)));
+            list.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => this.deleteParent(b.dataset.del)));
+        },
+
+        editParent(id) {
+            const p = this.parents.find(x => x.id === id);
+            if (!p) return;
+            this.editingParentId = id;
+            document.getElementById('parent-name-input').value = p.name || '';
+            document.getElementById('parent-relation-input').value = p.relation || '';
+            document.getElementById('parent-form-mode-icon').innerText = '✏️';
+            document.getElementById('parent-form-mode-label').innerText = 'Edit Parent';
+            document.getElementById('parent-form-save-label').innerText = 'Save Changes';
+            document.getElementById('parent-form-cancel').style.display = 'inline-block';
+            document.getElementById('parent-name-input').focus();
+        },
+
+        resetParentForm() {
+            this.editingParentId = null;
+            document.getElementById('parent-name-input').value = '';
+            document.getElementById('parent-relation-input').value = '';
+            document.getElementById('parent-form-mode-icon').innerText = '➕';
+            document.getElementById('parent-form-mode-label').innerText = 'Add a Parent / Guardian';
+            document.getElementById('parent-form-save-label').innerText = 'Add Parent';
+            document.getElementById('parent-form-cancel').style.display = 'none';
+        },
+
+        async saveParent() {
+            const name = document.getElementById('parent-name-input').value.trim();
+            const relation = document.getElementById('parent-relation-input').value.trim();
+
+            if (!name) { alert('Parent name is required.'); return; }
+            if (/[<>"']/.test(name) || /[<>"']/.test(relation)) {
+                alert('Invalid characters detected.'); return;
+            }
+
+            const btn = document.getElementById('parent-form-save');
+            btn.disabled = true;
+            try {
+                if (this.editingParentId) {
+                    const p = this.parents.find(x => x.id === this.editingParentId);
+                    if (p) { p.name = name; p.relation = relation; }
+                } else {
+                    this.parents.push({
+                        id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                        name, relation
+                    });
+                }
+                await this.saveProfile();
+                this.updateDockBadges();
+                this.resetParentForm();
+                this.renderParents();
+            } catch(e) {
+                console.error(e);
+                alert('Failed to save parent. ' + (e?.message || ''));
+            } finally {
+                btn.disabled = false;
+            }
+        },
+
+        async deleteParent(id) {
+            if (!confirm('Remove this parent? Existing bookings will not be deleted.')) return;
+            this.parents = this.parents.filter(p => p.id !== id);
+            try {
+                await this.saveProfile();
+                this.updateDockBadges();
+                this.renderParents();
+            } catch(e) {
+                console.error(e);
+                alert('Failed to remove parent.');
+            }
+        },
+
+        // ════════════════════════════════════
+        // MY BOOKINGS
+        // ════════════════════════════════════
+        subscribeMyBookings() {
+            if (this.bookingsUnsub) this.bookingsUnsub();
+            const q = query(collection(this.db, this.paths.bookings), where('email', '==', this.verifiedEmail));
+            this.bookingsUnsub = onSnapshot(q, snap => {
+                this.myBookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                this.updateDockBadges();
+                if (!document.getElementById('bookings-modal').classList.contains('hidden')) {
+                    this.renderBookings();
+                }
+            }, err => console.warn('bookings subscription failed:', err));
+        },
+
+        isBookingActive(b) {
+            if (!b.slotDate || b.slotDate === 'General' || b.slotDate === 'General Availability') return true;
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const dt = new Date(b.slotDate); dt.setHours(0, 0, 0, 0);
+            return !isNaN(dt.getTime()) && dt.getTime() >= today.getTime();
+        },
+
+        updateDockBadges() {
+            const cb = document.getElementById('dock-children-badge');
+            const pb = document.getElementById('dock-parents-badge');
+            const bb = document.getElementById('dock-bookings-badge');
+            const childCount = this.children.length;
+            const parentCount = this.parents.length;
+            const activeBkCount = this.myBookings.filter(b => this.isBookingActive(b)).length;
+            cb.innerText = childCount;
+            cb.classList.toggle('show', childCount > 0);
+            pb.innerText = parentCount;
+            pb.classList.toggle('show', parentCount > 0);
+            bb.innerText = activeBkCount;
+            bb.classList.toggle('show', activeBkCount > 0);
+        },
+
+        openBookingsModal() {
+            document.getElementById('bookings-modal').classList.remove('hidden');
+            this.renderBookings();
+        },
+
+        switchBookingsTab(tab) {
+            this._bookingsTab = tab;
+            document.querySelectorAll('[data-bk-tab]').forEach(t => t.classList.toggle('active', t.dataset.bkTab === tab));
+            document.getElementById('bookings-list-active').style.display = tab === 'active' ? '' : 'none';
+            document.getElementById('bookings-list-history').style.display = tab === 'history' ? '' : 'none';
+        },
+
+        renderBookings() {
+            const active = this.myBookings.filter(b => this.isBookingActive(b));
+            const history = this.myBookings.filter(b => !this.isBookingActive(b));
+            document.getElementById('bookings-tab-active-count').innerText = active.length;
+            document.getElementById('bookings-tab-history-count').innerText = history.length;
+
+            const sortByDateTime = (a, b) => (a.slotDate || '').localeCompare(b.slotDate || '') || (a.slotTime || '').localeCompare(b.slotTime || '');
+            const renderRow = (b, isHistory) => {
+                const dd = (b.slotDate && b.slotDate !== 'General') ? ` · ${escapeHtml(b.slotDate)}` : '';
+                const studentLabel = b.student + (b.grade ? ` (${b.grade})` : '');
+                return `
+                    <div class="booking-row${isHistory ? ' history' : ''}">
+                        <div class="booking-info">
+                            <div class="booking-teacher">${escapeHtml(b.teacherName)}</div>
+                            <div class="booking-time"><i class="far fa-clock"></i> ${escapeHtml(b.slotTime || '')}${dd}</div>
+                            <div class="booking-student"><i class="fas fa-user"></i> ${escapeHtml(studentLabel)}</div>
+                        </div>
+                        ${isHistory ? '' : `<button class="booking-cancel" data-cancel="${escapeHtml(b.id)}">Cancel</button>`}
+                    </div>`;
+            };
+
+            const a = document.getElementById('bookings-list-active');
+            const h = document.getElementById('bookings-list-history');
+            a.innerHTML = active.length
+                ? active.sort(sortByDateTime).map(b => renderRow(b, false)).join('')
+                : `<div class="pta-empty-state"><div class="icon">📭</div><div>No active bookings.</div></div>`;
+            h.innerHTML = history.length
+                ? history.sort(sortByDateTime).map(b => renderRow(b, true)).join('')
+                : `<div class="pta-empty-state"><div class="icon">🗂️</div><div>No past bookings.</div></div>`;
+
+            a.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', () => this.cancelMyBooking(btn.dataset.cancel)));
+            this.switchBookingsTab(this._bookingsTab);
+        },
+
+        async cancelMyBooking(bookingId) {
+            const b = this.myBookings.find(x => x.id === bookingId);
+            if (!b) return;
+            if (!confirm(`Cancel your booking with ${b.teacherName} at ${b.slotTime}?`)) return;
+
+            try {
+                const sr = doc(this.db, `${this.paths.teachersCollection}/${b.teacherId}/slots/${b.slotId}`);
+                await runTransaction(this.db, async tx => {
+                    const s = await tx.get(sr);
+                    if (s.exists()) tx.update(sr, { status: 'available', bookingRef: null, lockedAt: null });
+                });
+                try { await deleteDoc(doc(this.db, this.paths.bookings, b.id)); } catch(e) { console.warn('Booking delete blocked by rules:', e); }
+                this.writeLog('Booking Cancelled', `Parent (${this.verifiedEmail}) cancelled booking for ${b.student} with ${b.teacherName} on ${b.slotDate || ''} ${b.slotTime}`);
+                callGAS({ action: 'sendCancellation', email: this.verifiedEmail, parent: b.parent, student: b.student + (b.grade ? ' (' + b.grade + ')' : ''), teacherName: b.teacherName, slotTime: b.slotTime, slotDate: b.slotDate || '' });
+            } catch(e) {
+                console.error(e);
+                alert('Failed to cancel: ' + (e?.message || e));
+            }
+        },
+
+
+        async checkSystemConfig() {
+            try {
+                // ✅ 防刷：限制 config 讀取頻率
+                if (!RateLimiter.check('config')) {
+                    this.revealPage();
+                    this.showEmpty("Too Many Requests", "Please wait a moment and try again.");
+                    return;
+                }
+                const snap = await getDoc(doc(this.db, this.paths.config));
+                if (snap.exists()) {
+                    const { start, end, announcement, gasUrl } = snap.data();
+                    if (gasUrl) window._GAS_URL = gasUrl;
+                    renderBulletin({ start, end, announcement });
+                    const nowMs = Date.now();
+                    const s = parseConfigDate(start);
+                    const e = parseConfigDate(end);
+
+                    if (!s || !e) {
+                        console.warn('Invalid system_settings start/end. Falling back to open mode.', { start, end });
+                        this.activateOpenState({ bypassRateLimit: true });
+                    } else if (nowMs >= s.getTime() && nowMs <= e.getTime()) {
+                        this.activateOpenState();
+                        this.startCountdown(e, 'close');
+                    } else if (nowMs < s.getTime()) {
+                        this.isOpen = false;
+                        this.setStatus('soon');
+                        this.setBadge('soon','Opening Soon');
+                        this.startCountdown(s, 'open');
+                        this.showEmpty("Schedule Opens Soon", `Bookings open on ${formatDateTime(start)}`);
+                        this.revealPage(); // <-- 補上解除載入畫面
+                    } else {
+                        // 已經過了結束時間，確保狀態為關閉
+                        this.isOpen = false;
+                        this.setStatus('closed');
+                        this.setBadge('closed','Booking Closed');
+                        this.showEmpty("Schedule Closed", "The booking period has ended. Thank you!");
+                        this.revealPage(); // <-- 補上解除載入畫面
+                    }
+                } else {
+                    renderBulletin({});
+                    this.isOpen = true; this.setStatus('open'); this.setBadge('open','Booking Open'); this.loadSchedule();
+                }
+            } catch {
+                renderBulletin({});
+                this.isOpen = true; this.setStatus('open'); this.setBadge('open','Booking Open'); this.loadSchedule();
+            }
+        },
+
+        activateOpenState(options = {}) {
+            this.isOpen = true;
+            this.setStatus('open');
+            this.setBadge('open','Booking Open Now');
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('board-toolbar').style.display = 'flex';
+            this.loadSchedule(options);
+        },
+
+
+        setStatus(state) {
+            const p = document.getElementById('status-pill');
+            const map = { open:['status-open','<i class="fas fa-door-open"></i> Booking Open'], closed:['status-closed','<i class="fas fa-lock"></i> Closed'], soon:['status-soon','<i class="fas fa-clock"></i> Opening Soon'] };
+            p.className = `status-pill ${map[state][0]}`; p.innerHTML = map[state][1];
+        },
+        setBadge(state, text) {
+            const b = document.getElementById('status-badge-inline');
+            b.style.display = 'inline-flex';
+            b.className = `status-badge-inline badge-${state}`;
+            document.getElementById('status-badge-text').innerText = text;
+        },
+
+
+        startCountdown(target, mode) {
+            const box   = document.getElementById('countdown-box');
+            const label = document.getElementById('countdown-label');
+            box.classList.remove('hidden');
+            label.innerText = mode === 'close' ? 'Closes in' : 'Opens in';
+            if (this.countdownTimer) clearInterval(this.countdownTimer);
+            const tick = () => {
+                const targetMs = target instanceof Date ? target.getTime() : parseConfigDate(target)?.getTime();
+                if (!targetMs) {
+                    clearInterval(this.countdownTimer);
+                    box.classList.add('hidden');
+                    return;
+                }
+                const diff = targetMs - Date.now();
+                if (diff <= 0) {
+                    clearInterval(this.countdownTimer); box.classList.add('hidden');
+                    if (mode === 'close') {
+                        // 自動關閉登記防護
+                        this.isOpen = false;
+                        this.setStatus('closed');
+                        this.setBadge('closed','Booking Closed');
+                        this.showEmpty("Booking Closed","The booking window has just ended.");
+                        // 強制關閉任何可能開著的輸入框防呆
+                        if(Swal.isVisible()) Swal.close();
+                    } else {
+                        this.activateOpenState({ bypassRateLimit: true });
+                    }
+                    return;
+                }
+                const tot = Math.floor(diff/1000);
+                const d=Math.floor(tot/86400), h=Math.floor((tot%86400)/3600), m=Math.floor((tot%3600)/60), s=tot%60;
+                const dEl=document.getElementById('cd-days'), dSep=document.getElementById('cd-days-sep');
+                if (d > 0) { dEl.style.display=''; dSep.style.display=''; dEl.innerText=d; }
+                else { dEl.style.display='none'; dSep.style.display='none'; }
+                document.getElementById('cd-hours').innerText   = String(h).padStart(2,'0');
+                document.getElementById('cd-minutes').innerText = String(m).padStart(2,'0');
+                document.getElementById('cd-seconds').innerText = String(s).padStart(2,'0');
+            };
+            tick(); this.countdownTimer = setInterval(tick, 1000);
+        },
+
+
+        async writeLog(action, details) {
+            try {
+                // ✅ 防刷：限制 log 寫入頻率，避免被惡意灌入大量 log
+                if (!RateLimiter.check('logs')) { console.warn("Log rate limited"); return; }
+                await addDoc(collection(this.db, this.paths.logs), {
+                    action: action,
+                    details: details,
+                    userEmail: 'Parent',
+                    timestamp: new Date().toISOString(),
+                    timestampMs: Date.now()
+                });
+            } catch (e) { console.warn("Log failed", e); }
+        },
+
+
+        // ✅ 已優化：先從 localStorage 讀取快取，過期才向 Firebase 拉資料，大幅減少讀取量
+        async loadSchedule(options = {}) {
+            try {
+                const { bypassRateLimit = false } = options;
+                // 嘗試從快取載入
+                const cached = localStorage.getItem('pta_teachers');
+                const cacheTime = parseInt(localStorage.getItem('pta_teachers_ts') || '0');
+
+                if (cached && (Date.now() - cacheTime) < CACHE_TTL) {
+                    this.data.teachers = JSON.parse(cached);
+                    this.revealPage();
+                    this.renderSubjects(this.data.teachers);
+                    console.log('✅ Loaded from cache, 0 Firebase reads');
+                    return;
+                }
+
+                // ✅ 防刷：快取失效時才會走到這裡，限制讀取頻率
+                if (!bypassRateLimit && !RateLimiter.check('teachers')) {
+                    this.revealPage();
+                    this.showEmpty("Too Many Requests", "You're refreshing too fast. Please wait a moment.");
+                    return;
+                }
+
+                const snap = await getDocs(query(collection(this.db, this.paths.teachersCollection)));
+
+                if (snap.empty) {
+                    this.revealPage();
+                    this.showEmpty("Coming Soon", "No teachers loaded yet.");
+                    return;
+                }
+
+                // 直接 map 出老師資料，slots 留空，等待被點擊時再載入
+                this.data.teachers = snap.docs.map(d => ({
+                    ...d.data(),
+                    id: d.id,
+                    slots: []
+                }));
+
+                // 寫入快取
+                try {
+                    localStorage.setItem('pta_teachers', JSON.stringify(this.data.teachers));
+                    localStorage.setItem('pta_teachers_ts', Date.now().toString());
+                } catch(e) { /* localStorage 滿了或不可用，忽略 */ }
+
+                this.revealPage();
+                this.renderSubjects(this.data.teachers);
+
+            } catch (error) {
+                console.error("Schedule load error:", error);
+                this.revealPage();
+                this.showEmpty("Error", "Failed to load schedule. Please refresh.");
+            }
+        },
+
+
+        revealPage() { document.getElementById('loading-overlay').classList.add('hidden'); document.getElementById('main-content').style.display=''; },
+
+
+        showEmpty(title='Schedule Closed', msg='Please check back later.') {
+            document.getElementById('empty-state').style.display='block';
+            document.getElementById('empty-state-title').innerText=title;
+            document.getElementById('empty-state-text').innerText=msg;
+            document.getElementById('step-subject').style.display='none';
+            document.getElementById('step-teacher').style.display='none';
+            document.getElementById('step-time').style.display='none';
+            document.getElementById('board-toolbar').style.display='none';
+        },
+
+
+        handleSearch(queryText) {
+            const q = queryText.trim().toLowerCase();
+            if (!q) {
+                if(this.currentView==='time' && this.currentTeacher) {
+                    this.selectTeacher(this.currentTeacher);
+                } else if(this.currentView==='teacher' && this.currentSubject) {
+                    this.selectSubject(this.currentSubject);
+                } else {
+                    this.showSubjects();
+                }
+                return;
+            }
+
+            // 搜尋模式強制切換到「挑選老師」的清單畫面
+            this.currentView = 'teacher';
+            document.getElementById('step-subject').style.display='none';
+            document.getElementById('step-teacher').style.display='block';
+            document.getElementById('step-time').style.display='none';
+            document.getElementById('empty-state').style.display='none';
+            document.getElementById('board-toolbar').style.display='flex';
+
+            document.getElementById('step-1-nav').classList.remove('active');
+            document.getElementById('step-2-nav').classList.add('active');
+            document.getElementById('step-2-nav').innerHTML=`<span class="step-number">2</span><span>Search results</span>`;
+            document.getElementById('nav-arrow-2').style.display='none';
+            document.getElementById('step-3-nav').style.display='none';
+            document.getElementById('btn-back-to-subject').style.display='none'; // 搜尋時不顯示返回按鈕
+
+            this.renderTeachers(this.data.teachers.filter(t=>(t.name&&t.name.toLowerCase().includes(q))||(t.subject&&t.subject.toLowerCase().includes(q))||(t.location&&t.location.toLowerCase().includes(q))));
+        },
+
+
+        renderSubjects(teachers=this.data.teachers) {
+            this.currentView='subject';
+            this.currentSubject=null;
+            this.currentTeacher=null;
+
+            document.getElementById('board-toolbar').style.display='flex';
+            document.getElementById('step-1-nav').classList.add('active');
+            document.getElementById('step-2-nav').classList.remove('active');
+            document.getElementById('step-2-nav').innerHTML='<span class="step-number">2</span><span>Teacher</span>';
+            document.getElementById('step-3-nav').classList.remove('active');
+            document.getElementById('nav-arrow-2').style.display = 'none';
+            document.getElementById('step-3-nav').style.display = 'none';
+
+            document.getElementById('empty-state').style.display='none';
+            document.getElementById('step-subject').style.display='block';
+            document.getElementById('step-teacher').style.display='none';
+            document.getElementById('step-time').style.display='none';
+
+            // 將所有老師的 subject (可能包含逗號) 拆解出來變成獨立分類
+            let allSubjects = [];
+            teachers.forEach(t => {
+                if(t.subject) t.subject.split(',').forEach(s => allSubjects.push(s.trim()));
+            });
+            const subjects = [...new Set(allSubjects)].filter(Boolean).sort();
+
+            const c = document.getElementById('subject-list'); c.innerHTML='';
+            subjects.forEach((sub,i)=>{
+                // 只要老師的科目字串包含這個分類名稱，就算進數量裡
+                const count = teachers.filter(t => t.subject && t.subject.split(',').map(s=>s.trim()).includes(sub)).length;
+                const btn=document.createElement('button'); btn.type='button'; btn.className='subject-card fade-in'; btn.style.animationDelay=`${i*.05}s`;
+                btn.setAttribute('aria-label', `${sub}, ${count} teacher${count>1?'s':''}`);
+                btn.innerHTML=`<div class="subject-icon">${getSubjectIcon(sub)}</div><div class="subject-name">${escapeHtml(sub)}</div><div class="subject-count">${count} Teacher${count>1?'s':''}</div>`;
+                btn.addEventListener('click',()=>{document.getElementById('search-input').value='';this.selectSubject(sub);});
+                c.appendChild(btn);
+            });
+        },
+
+
+        showSubjects() {
+            if (this.slotSnapshotUnsubscribe) { this.slotSnapshotUnsubscribe(); this.slotSnapshotUnsubscribe = null; }
+            document.getElementById('search-input').value='';
+            this.renderSubjects(this.data.teachers);
+        },
+
+
+        selectSubject(sub) {
+            if (this.slotSnapshotUnsubscribe) { this.slotSnapshotUnsubscribe(); this.slotSnapshotUnsubscribe = null; }
+            this.currentView='teacher';
+            this.currentSubject=sub;
+            this.currentTeacher=null;
+
+            document.getElementById('step-subject').style.display='none';
+            document.getElementById('step-teacher').style.display='block';
+            document.getElementById('step-time').style.display='none';
+
+            document.getElementById('btn-back-to-subject').style.display='inline-flex';
+
+            document.getElementById('step-1-nav').classList.remove('active');
+            document.getElementById('step-2-nav').classList.add('active');
+            document.getElementById('step-2-nav').innerHTML=`<span class="step-number">2</span><span>Teacher</span>`;
+            document.getElementById('step-3-nav').classList.remove('active');
+            document.getElementById('nav-arrow-2').style.display = 'none';
+            document.getElementById('step-3-nav').style.display = 'none';
+
+            // 只要老師的科目欄位包含所選的科目，就會顯示
+            this.renderTeachers(this.data.teachers.filter(t => t.subject && t.subject.split(',').map(s=>s.trim()).includes(sub)));
+        },
+
+
+        renderTeachers(list) {
+            const c = document.getElementById('teacher-list'); c.innerHTML='';
+            if(!list.length){c.innerHTML='<div style="text-align:center;grid-column:1/-1;padding:60px;color:#94a3b8;font-weight:800;font-size:20px;">No teachers found.</div>';return;}
+
+            list.forEach((t,i)=>{
+                // ✅ 修復：同時支援 Firebase Storage URL 和 base64
+                const av = t.image && (t.image.startsWith('data:image') || t.image.startsWith('https://'))
+                    ? `<img src="${t.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;border:4px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.1);">`
+                    : getMascotSVG(t.mascot||0);
+
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'teacher-select-card fade-in';
+                card.style.animationDelay = `${i*.05}s`;
+                card.setAttribute('aria-label', `Select ${t.name}`);
+
+                card.innerHTML = `
+                    <div class="ts-avatar-wrapper">
+                        <div class="ts-avatar">${av}</div>
+                    </div>
+                    <div class="ts-name">${escapeHtml(t.name)}</div>
+                `;
+                // 點擊卡片直接跳轉到第三層 (時間表與簡歷)
+                card.addEventListener('click', () => this.selectTeacher(t));
+                c.appendChild(card);
+            });
+        },
+
+
+        selectTeacher(t) {
+            this.currentView = 'time';
+            this.currentTeacher = t;
+
+            document.getElementById('step-subject').style.display = 'none';
+            document.getElementById('step-teacher').style.display = 'none';
+            document.getElementById('step-time').style.display = 'block';
+
+
+            document.getElementById('step-2-nav').classList.remove('active');
+            document.getElementById('nav-arrow-2').style.display = 'inline-block';
+            document.getElementById('step-3-nav').style.display = 'inline-block';
+            document.getElementById('step-3-nav').classList.add('active');
+
+            // 先渲染已有的舊資料避免畫面空白
+            this.renderTeacherDetail(t);
+
+
+            // 設置即時監聽器，讓其他家長點擊時，畫面能立刻更新「Booking...」狀態
+            // ✅ 防刷：限制 slot 監聽建立的頻率
+            if (!RateLimiter.check('slots')) {
+                Swal.fire({icon:'warning', title:'Slow down!', text:'You are switching teachers too fast. Please wait a moment.', timer:3000, showConfirmButton:false});
+                return;
+            }
+            if (this.slotSnapshotUnsubscribe) this.slotSnapshotUnsubscribe();
+            this.slotSnapshotUnsubscribe = onSnapshot(collection(this.db, `${this.paths.teachersCollection}/${t.id}/slots`), ss => {
+                t.slots = [];
+                ss.forEach(s => t.slots.push({...s.data(), id:s.id}));
+                t.slots.sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.time.localeCompare(b.time));
+
+                if (this.currentView === 'time' && this.currentTeacher?.id === t.id) {
+                    this.renderTeacherDetail(t);
+                }
+            });
+        },
+
+
+        renderTeacherDetail(t) {
+            const c = document.getElementById('single-teacher-container');
+            const byDate={};
+            t.slots.forEach(s=>{const d=s.date||'General';if(!byDate[d])byDate[d]=[];byDate[d].push(s);});
+
+            let slotsHtml='';
+            if(!Object.keys(byDate).length){
+                const customMsg = t.noSlotsMessage
+                    ? escapeHtml(t.noSlotsMessage).replace(/\n/g, '<br>')
+                    : 'No slots available yet...';
+
+                slotsHtml=`
+                    <div style="background:#f8fafc; border:2px dashed #e2e8f0; border-radius:16px; padding:32px 20px; text-align:center; color:#64748b;">
+                        <div style="font-size:32px; margin-bottom:12px;">☕</div>
+                        <div style="font-size:16px; font-weight:800; line-height:1.5;">${customMsg}</div>
+                    </div>`;
+            } else {
+                for(const[date,ds]of Object.entries(byDate)){
+                    const lbl=date==='General'?'':`<div class="date-label"><i class="far fa-calendar-alt"></i> ${escapeHtml(date)}</div>`;
+                    const currentUid = this.auth?.currentUser?.uid;
+                    const btns=ds.map(s=>{
+                        if (s.status === 'booked') {
+                            return `<button disabled class="slot-btn slot-booked">${escapeHtml(s.time)}</button>`;
+                        } else if (s.status === 'locked' && (Date.now() - (s.lockedAt || 0) < 300000)) {
+                            // ✅ 修復：如果是自己鎖的，顯示為可點擊（允許重新預約）
+                            if (s.lockedBy === currentUid) {
+                                return `<button class="slot-btn slot-available" data-tid="${escapeHtml(t.id)}" data-sid="${escapeHtml(s.id)}" data-time="${escapeHtml(s.time)}" data-date="${escapeHtml(date)}" style="border-color:var(--duo-blue);color:var(--duo-blue);">${escapeHtml(s.time)} <i class="fas fa-redo" style="font-size:10px;"></i></button>`;
+                            }
+                            return `<button disabled class="slot-btn slot-locked">Booking <i class="fas fa-spinner"></i></button>`;
+                        } else {
+                            return `<button class="slot-btn slot-available" data-tid="${escapeHtml(t.id)}" data-sid="${escapeHtml(s.id)}" data-time="${escapeHtml(s.time)}" data-date="${escapeHtml(date)}">${escapeHtml(s.time)}</button>`;
+                        }
+                    }).join('');
+                    slotsHtml+=`${lbl}<div class="slots-row">${btns}</div>`;
+                }
+            }
+
+            // ✅ 修復：同時支援 Firebase Storage URL 和 base64
+            const av = t.image && (t.image.startsWith('data:image') || t.image.startsWith('https://'))
+                ? `<img src="${t.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;border:4px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.1);">`
+                : getMascotSVG(t.mascot||0);
+
+            const noteHtml = t.note ? `
+                <div class="teacher-resume-note" style="margin-top: 24px;">
+                    <div class="note-title"><i class="fas fa-info-circle"></i> About Teacher</div>
+                    <div class="note-content">${escapeHtml(t.note).replace(/\n/g, '<br>')}</div>
+                </div>` : '';
+
+            // 如果老師有多個科目，在簡歷的地方把它拆成多個美美的 Tag
+            const subjectTagsHtml = (t.subject || '').split(',').map(s =>
+                `<span class="teacher-meta-tag"><i class="fas fa-book" style="color:#cbd5e1;"></i> ${escapeHtml(s.trim())}</span>`
+            ).join('');
+
+
+            c.innerHTML = `
+                <div class="teacher-card fade-in">
+                    <!-- 上半部：老師簡歷區 -->
+                    <div>
+                        <div class="teacher-resume-header">
+                            <div class="teacher-avatar-large">${av}</div>
+                            <div style="flex: 1;">
+                                <div class="teacher-name-large">${escapeHtml(t.name)}</div>
+                                <div class="teacher-meta-tags">
+                                    ${subjectTagsHtml}
+                                    <span class="teacher-meta-tag"><i class="fas fa-map-marker-alt" style="color:#cbd5e1;"></i> ${escapeHtml(t.location||'TBA')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        ${noteHtml}
+                    </div>
+
+
+                    <!-- 下半部：預約時段區 -->
+                    <div class="slots-area">
+                        <div class="slots-area-title"><i class="fas fa-calendar-check" style="color:var(--duo-blue);"></i> Available Slots</div>
+                        ${slotsHtml}
+                    </div>
+                </div>`;
+
+            c.querySelectorAll('.slot-available').forEach(btn=>btn.addEventListener('click',()=>this.book(btn.dataset.tid,btn.dataset.sid,btn.dataset.time,btn.dataset.date)));
+        },
+
+
+        async book(tid, slotId, timeLabel, dateLabel) {
+            if (Date.now() - this.lastBookingTime < 3000) return Swal.fire({icon:'warning',title:'Too Fast!',text:'Please wait a few seconds.',customClass:{popup:'swal-saas'}});
+            if (!this.isOpen) return Swal.fire({icon:'error',title:'Booking Closed',text:'The booking window is closed.',customClass:{popup:'swal-saas'}});
+            if (!this.verifiedEmail) return Swal.fire({icon:'error',title:'Not Signed In',text:'Please sign in first.',customClass:{popup:'swal-saas'}});
+
+            // 必須先有孩子檔案
+            if (!this.children.length) {
+                const r = await Swal.fire({
+                    title:'Add a Child First',
+                    html:'You need at least one child profile before booking.<br><br>Click below to add one.',
+                    icon:'info',
+                    showCancelButton:true,
+                    confirmButtonText:'👶 Open Children Manager',
+                    cancelButtonText:'Cancel',
+                    customClass:{popup:'swal-saas'}
+                });
+                if (r.isConfirmed) this.openChildrenModal();
+                return;
+            }
+
+            this.lastBookingTime = Date.now();
+            const t = this.data.teachers.find(x => x.id === tid); if (!t) return;
+            const dd = (dateLabel && dateLabel !== 'General') ? `on ${escapeHtml(dateLabel)}` : '';
+
+            // --- 步驟 0: 鎖定時段 ---
+            const slotRef = doc(this.db, `${this.paths.teachersCollection}/${tid}/slots/${slotId}`);
+            const myUid = this.auth.currentUser.uid;
+            try {
+                await runTransaction(this.db, async tx => {
+                    const sf = await tx.get(slotRef);
+                    const data = sf.data();
+                    if (!sf.exists() || data.status === 'booked') throw "unavailable";
+                    if (data.status === 'locked') {
+                        const isMyLock = data.lockedBy === myUid;
+                        const isExpired = Date.now() - (data.lockedAt || 0) >= 300000;
+                        if (!isMyLock && !isExpired) throw "unavailable";
+                    }
+                    tx.update(slotRef, { status: 'locked', lockedAt: Date.now(), lockedBy: myUid });
+                });
+            } catch (e) {
+                return Swal.fire({icon:'warning', title:'Too Slow! 🏃💨', text:'Someone else just started booking this time. Please pick another one.', customClass:{popup:'swal-saas'}});
+            }
+
+            // 必須先有家長檔案
+            if (!this.parents.length) {
+                const r = await Swal.fire({
+                    title:'Add a Parent First',
+                    html:'You need at least one parent profile before booking.<br><br>Click below to add one.',
+                    icon:'info',
+                    showCancelButton:true,
+                    confirmButtonText:'👨‍👩‍👧 Open Parents Manager',
+                    cancelButtonText:'Cancel',
+                    customClass:{popup:'swal-saas'}
+                });
+                if (r.isConfirmed) this.openParentsModal();
+                runTransaction(this.db, async tx => { const s = await tx.get(slotRef); if(s.exists() && s.data().lockedBy === myUid) tx.update(slotRef, {status:'available',lockedAt:null,lockedBy:null}); }).catch(e => console.warn('Unlock failed:', e));
+                return;
+            }
+
+            // --- 步驟 1: 表單（孩子下拉 + 家長下拉 + topics + reminder checkbox）---
+            const childOptions = this.children.map(c =>
+                `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} (${escapeHtml(c.grade)})</option>`
+            ).join('');
+            const parentOptions = this.parents.map(p =>
+                `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}${p.relation ? ' · ' + escapeHtml(p.relation) : ''}</option>`
+            ).join('');
+
+            const { value: form, isConfirmed } = await Swal.fire({
+                title:'Confirm Booking',
+                customClass:{popup:'swal-saas swal-wide'},
+                html:`
+                    <div style="background:#f8fafc;border:2px solid #e2e8f0;border-radius:20px;padding:24px;margin-bottom:24px;text-align:left;">
+                        <div style="font-weight:900;color:#1e293b;font-size:24px;">${escapeHtml(t.name)}</div>
+                        <div style="color:var(--duo-green-dark);font-weight:900;font-size:20px;margin-top:8px;"><i class="far fa-clock"></i> ${escapeHtml(timeLabel)} ${dd}</div>
+                        <div style="color:#64748b;font-size:16px;font-weight:700;margin-top:8px;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(t.location||'TBA')}</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;text-align:left;">
+                        <label style="font-weight:900;font-size:14px;color:#64748b;margin-bottom:6px;margin-left:4px;text-transform:uppercase;display:block;">For Which Child? <span style="color:#ef4444">*</span></label>
+                        <select id="sw-child" class="child-select">
+                            <option value="">— Select a child —</option>
+                            ${childOptions}
+                        </select>
+
+                        <label style="font-weight:900;font-size:14px;color:#64748b;margin-bottom:6px;margin-left:4px;text-transform:uppercase;display:block;">Parent Attending? <span style="color:#ef4444">*</span></label>
+                        <select id="sw-parent-id" class="child-select">
+                            <option value="">— Select a parent —</option>
+                            ${parentOptions}
+                        </select>
+
+                        <label style="font-weight:900;font-size:14px;color:#64748b;margin-bottom:6px;margin-left:4px;text-transform:uppercase;display:block;">Topics to Discuss (Optional)</label>
+                        <textarea id="sw-message" class="saas-input" rows="3" placeholder="Specific questions or topics you'd like to talk about..." maxlength="300" style="resize:vertical;"></textarea>
+
+                        <label class="reminder-toggle" for="sw-reminder">
+                            <input type="checkbox" id="sw-reminder" checked>
+                            <div class="reminder-toggle-label">
+                                Send confirmation email to me
+                                <small>${escapeHtml(this.verifiedEmail)}</small>
+                            </div>
+                        </label>
+                    </div>`,
+                focusConfirm:false,
+                showCancelButton:true,
+                confirmButtonText:'CONFIRM BOOKING',
+                confirmButtonColor: 'var(--duo-blue)',
+                preConfirm: () => {
+                    const childId = document.getElementById('sw-child').value.trim();
+                    const parentId = document.getElementById('sw-parent-id').value.trim();
+                    const m = document.getElementById('sw-message').value.trim();
+                    const sendReminder = document.getElementById('sw-reminder').checked;
+                    if (!childId) return Swal.showValidationMessage('Please select a child.');
+                    if (!parentId) return Swal.showValidationMessage('Please select a parent.');
+                    const child = this.children.find(c => c.id === childId);
+                    const parentObj = this.parents.find(p => p.id === parentId);
+                    if (!child) return Swal.showValidationMessage('Selected child not found.');
+                    if (!parentObj) return Swal.showValidationMessage('Selected parent not found.');
+                    return { childId, child, parentId, parentObj, message: m, sendReminder };
+                }
+            });
+
+            if (!isConfirmed || !form) {
+                runTransaction(this.db, async tx => { const s = await tx.get(slotRef); if(s.exists() && s.data().lockedBy === myUid) tx.update(slotRef, {status:'available',lockedAt:null,lockedBy:null}); }).catch(e => console.warn('Unlock failed:', e));
+                return;
+            }
+
+            // --- 步驟 2: 上限 / 同老師檢查（用 verifiedEmail）---
+            Swal.fire({title:'Reserving...', customClass:{popup:'swal-saas'}, didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
+
+            try {
+                const existingSnap = await getDocs(query(collection(this.db, this.paths.bookings), where("email","==", this.verifiedEmail)));
+                const sameTeacher = existingSnap.docs.some(d => d.data().teacherId === tid);
+                const existingCount = existingSnap.size;
+
+                if (sameTeacher) {
+                    runTransaction(this.db, async tx => { const s = await tx.get(slotRef); if(s.exists() && s.data().lockedBy === myUid) tx.update(slotRef, {status:'available',lockedAt:null,lockedBy:null}); }).catch(e => console.warn('Unlock failed:', e));
+                    return Swal.fire({title:'Already Booked', text:`You already have a booking with ${t.name}. Only one time slot per teacher is allowed.`, icon:'warning', customClass:{popup:'swal-saas'}});
+                }
+                if (existingCount >= BOOKING_LIMIT) {
+                    runTransaction(this.db, async tx => { const s = await tx.get(slotRef); if(s.exists() && s.data().lockedBy === myUid) tx.update(slotRef, {status:'available',lockedAt:null,lockedBy:null}); }).catch(e => console.warn('Unlock failed:', e));
+                    return Swal.fire({title:'Limit Reached', text:`You already have ${existingCount} bookings. Maximum is ${BOOKING_LIMIT}.`, icon:'warning', customClass:{popup:'swal-saas'}});
+                }
+
+                // --- 步驟 3: 寫入預約 ---
+                await runTransaction(this.db, async tx => {
+                    const sf = await tx.get(slotRef);
+                    if (!sf.exists() || sf.data().status === 'booked') throw "Slot unavailable";
+                    const slotData = sf.data();
+                    if (slotData.status === 'locked' && slotData.lockedBy && slotData.lockedBy !== myUid) throw "Not your lock";
+
+                    const bRef = doc(collection(this.db, this.paths.bookings));
+                    tx.set(bRef, {
+                        uid: myUid,
+                        teacherId: tid,
+                        teacherName: t.name,
+                        teacherEmail: t.email || '',
+                        location: t.location || '',
+                        slotId,
+                        slotTime: timeLabel,
+                        slotDate: dateLabel,
+                        student: form.child.name,
+                        grade: form.child.grade,
+                        childId: form.childId,
+                        parent: form.parentObj.name,
+                        parentId: form.parentId,
+                        parentRelation: form.parentObj.relation || '',
+                        email: this.verifiedEmail,
+                        message: form.message,
+                        sendReminder: form.sendReminder,
+                        createdAt: new Date().toISOString()
+                    });
+                    tx.update(slotRef, { status: 'booked', bookingRef: bRef.id, lockedAt: null });
+                });
+
+                // 本地更新
+                const localSlot = t.slots.find(x => x.id === slotId);
+                if (localSlot) {
+                    localSlot.status = 'booked';
+                    if (this.currentView === 'time' && this.currentTeacher?.id === tid) {
+                        this.renderTeacherDetail(t);
+                    }
+                }
+
+                const studentLabel = `${form.child.name} (${form.child.grade})`;
+                this.writeLog('Booking Created', `Parent (${this.verifiedEmail}) booked ${studentLabel} with ${t.name} on ${dateLabel} ${timeLabel}`);
+
+                if (form.sendReminder) {
+                    callGAS({
+                        action:"sendConfirmation",
+                        email: this.verifiedEmail,
+                        parent: form.parentObj.name,
+                        student: studentLabel,
+                        teacherName: t.name,
+                        teacherEmail: t.email || '',
+                        slotTime: timeLabel,
+                        slotDate: dateLabel,
+                        location: t.location || '',
+                        message: form.message
+                    });
+                }
+
+                Swal.fire({
+                    title:'Booking Confirmed!',
+                    html:`<div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:20px;padding:24px;text-align:left;margin-top:20px;"><div style="font-weight:900;font-size:22px;color:#166534;">${escapeHtml(t.name)}</div><div style="color:var(--duo-green-dark);font-size:20px;font-weight:900;margin-top:8px;"><i class="far fa-check-circle"></i> ${escapeHtml(timeLabel)} ${dd}</div><div style="color:#166534;font-weight:700;font-size:16px;margin-top:8px;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(t.location||'TBA')}</div><div style="color:#166534;font-weight:700;font-size:14px;margin-top:8px;"><i class="fas fa-user"></i> ${escapeHtml(studentLabel)}</div></div>${form.sendReminder ? `<p style="font-size:14px;color:#64748b;font-weight:700;margin-top:20px;">📧 Confirmation sent to <strong>${escapeHtml(this.verifiedEmail)}</strong></p>` : `<p style="font-size:14px;color:#94a3b8;font-weight:700;margin-top:20px;">No confirmation email sent (you opted out).</p>`}`,
+                    confirmButtonText:'AWESOME!',
+                    customClass:{popup:'swal-saas'}
+                });
+            } catch (e) {
+                console.error("Booking failed:", e);
+                const errText = e?.code === 'permission-denied'
+                    ? 'Booking blocked by Firebase rules.'
+                    : (typeof e === 'string' ? e : 'Slot already taken. Please select another time.');
+                Swal.fire({title:'Oops!', text:errText, icon:'error', customClass:{popup:'swal-saas'}});
+            }
+        },
+
+
+        // ✅ showManageFlow / showBookingsForEmail / cancelByParent 已被 Floating Dock + Bookings Drawer 取代
+    };
+
+
+    window.app = app;
+
+    // ✅ Landing Page 模式：頁面載入時不初始化 Firebase，等使用者按 Enter 才開始
+    // 這能為「只是看看」的訪客節省 100% 的 Firebase 讀取量
+    window.startApp = function() {
+        document.getElementById('landing-page').classList.add('hidden');
+        document.getElementById('loading-overlay').classList.remove('hidden');
+        app.init();
+    };
+
+    // 如果有直接的 hash 參數（未來擴展用），可以自動跳過 Landing Page
+    if (location.hash === '#auto') {
+        document.addEventListener('DOMContentLoaded', () => window.startApp());
+    }
+
+</script>
+</body>
+</html>
